@@ -78,13 +78,13 @@ class VisualTCAV():
 	def __init__(
 		self,
 		model,
-		visual_tcav_dir="VisualTCAV",
+		visual_tcav_dir="Torch_VisualTCAV",
 		clear_cache=False,
 		batch_size=250,
 		models_dir=None, cache_dir=None, test_images_dir=None, concept_images_dir=None, random_images_folder=None
 	):
 		# Folders and directories
-		self.models_dir = os.path.join(visual_tcav_dir, "models") if not models_dir else models_dir
+		self.models_dir = os.path.join(visual_tcav_dir, "Models") if not models_dir else models_dir
 		self.cache_base_dir = os.path.join(visual_tcav_dir, "cache") if not cache_dir else cache_dir
 		self.cache_dir = self.cache_base_dir
 		self.test_images_dir = os.path.join(visual_tcav_dir, "test_images") if not test_images_dir else test_images_dir

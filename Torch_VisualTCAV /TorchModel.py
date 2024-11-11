@@ -36,6 +36,7 @@ import torch.nn.functional as F
 from joblib import dump, load
 import torch
 import torchvision.transforms as transforms
+from torchvision import datasets, transforms
 from PIL import Image
 import os
 import torch
@@ -153,7 +154,7 @@ class LogitsModel(nn.Module):
     return x
 
 
-class PyTorchModelWrapper:
+class TorchModelWrapper:
     def __init__(self, model_path, labels_path, batch_size, model_name):
 	    # Model details
 	    self.model_name = model_name        # Model name
@@ -295,160 +296,84 @@ class PyTorchModelWrapper:
 	    self.layer_tensors = RESNET_LAYERS_TENSORS
 
 
-class KerasModelWrapper():
-	#----TO DO----
-	##### Init #####
-	def __init__(self, model_path, labels_path, batch_size):
-
-		self.model_name = None				# Model name
-		self.layers = []					# Layer names
-		self.layer_tensors = None			# Tensors
-
-		self.simulated_layer_model = {}		# Simulated "layer" model
-		self.simulated_logits_model = {}	# Simulated "logits" model
-
-		# Batching
-		self.batch_size = batch_size
-
-		# Load model
-		self.model = tf.keras.models.load_model(model_path)
-		# Fetch tensors
-		self._get_layer_tensors()
-		# Load labels
-		self.labels = tf.io.gfile.GFile(labels_path).read().splitlines()
-
-	##### Get the class label from its id #####
-	def id_to_label(self, idx):
-		return self.labels[idx]
-
-	##### Get the class id from its label #####
-	def label_to_id(self, label):
-		return self.labels.index(label)
-
-	##### Get the prediction(s) given one or more input(s) #####
-	def get_predictions(self, imgs):
-
-		# Feed the model with the inputs
-		inputs = tf.cast(imgs, tf.float32)
-		predictions = self.model(inputs)
-
-		# Return the predictions
-		return predictions
-
-
-
-	##### Get the feature maps given one or more input(s) #####
-	def get_feature_maps(self, imgs, layer_name):
-
-		# Simulate a model with the selected layer as the last (lazy)
-		if layer_name not in self.simulated_layer_model:
-			self.simulated_layer_model[layer_name] = tf.keras.models.Model(
-				inputs = [self.model.inputs],
-				outputs = [self.layer_tensors[layer_name]]
-			)
-
-		# Compute the fmaps
-		feature_maps = np.array([])
-		for i in range(len(imgs)):
-			q = i%self.batch_size
-			if q == self.batch_size-1 or i == len(imgs)-1:
-				inputs = tf.cast(imgs[i-q : min(i+1, len(imgs))], tf.float32)
-				output = self.simulated_layer_model[layer_name](inputs)
-				if len(feature_maps) == 0:
-					feature_maps = output
-				else:
-					feature_maps = np.concatenate((feature_maps, output))
-
-		# Return the fmaps
-		return feature_maps
-
-	##### Get the logits given a layer and one or more input(s) #####
-	def get_logits(self, feature_maps, layer_name):
-		#----TO DO----
-		# Simulate a model with the logits (lazy)
-		if layer_name not in self.simulated_logits_model:
-			self.simulated_logits_model[layer_name] = tf.keras.Model(
-				inputs = self.layer_tensors[layer_name],
-				outputs = self.model.outputs
-			)
-			self.simulated_logits_model[layer_name].layers[-1].activation = None
-
-		# Feed the model with the inputs
-		logits = self.simulated_logits_model[layer_name](feature_maps)
-
-		# Return the logits
-		return logits
-
-	##### Get the gradients given a layer and one or more input(s) #####
-	def get_gradient_of_score(self, feature_maps, layer_name, target_class_index):
-		#----TO DO----
-		# Simulate a model with the logits (lazy)
-		if layer_name not in self.simulated_logits_model:
-			self.simulated_logits_model[layer_name] = tf.keras.Model(
-				inputs = self.layer_tensors[layer_name],
-				outputs = self.model.outputs
-			)
-			self.simulated_logits_model[layer_name].layers[-1].activation = None
-
-		# Executing the gradients computation (batching)
-		gradients = np.array([])
-		for i in range(len(feature_maps)):
-			q = i%self.batch_size
-			if q == self.batch_size-1 or i == len(feature_maps)-1:
-				inputs = tf.cast(feature_maps[i-q : min(i+1, len(feature_maps))], tf.float32)
-				# Real batched computation
-				with tf.GradientTape() as tape:
-					tape.watch(inputs)
-					logits = self.simulated_logits_model[layer_name](inputs)
-					logit = logits[..., target_class_index]
-				output = tape.gradient(logit, inputs)
-				# Concatenating the batches' outputs
-				if len(gradients) == 0:
-					gradients = output
-				else:
-					gradients = np.concatenate((gradients, output))
-
-		# Return the gradients
-		return gradients
-
-	##### Get wrapped model's image shape #####
-	def get_image_shape(self):
-		input_shape = self.model.input_shape[1:]
-		x = input_shape[0]
-		y = input_shape[1]
-		c = input_shape[2]
-		return [x, y, c]
-
-	# Util to get the layer tensors
-	def _get_layer_tensors(self):
-		self.layer_tensors = {}
-		self.layers = self.model.layers
-		self.model_name = self.model.name
-		for layer in self.layers:
-			#print(layer.name)
-			#print(self.model_name)
-			if 'input' not in layer.name:
-				# ResNet50V2
-				if self.model_name == 'resnet50v2':
-					if "conv4" in layer.name or "conv5" in layer.name:
-						if '_out' in layer.name:
-							self.layer_tensors[layer.name] = layer.output
-					elif layer.name == "post_relu":
-						self.layer_tensors[layer.name] = layer.output
-				# VGG16
-				elif self.model_name == 'vgg16':
-					if 'conv' in layer.name and "conv_1" not in layer.name:# and "conv_2" not in layer.name:
-						self.layer_tensors[layer.name] = layer.output
-				# InceptionV3
-				elif self.model_name == 'inception_v3':
-					if 'mixed' in layer.name:
-						self.layer_tensors[layer.name] = layer.output
-				else:
-					self.layer_tensors[layer.name] = layer.output
-
-	# Util to reshape the feature maps as needed to feed through the model network
-	#def reshape_feature_maps(self, layer_acts):
-	#	return np.asarray(layer_acts).squeeze()
 
 
 #####
+
+
+#####
+# ImageActivationGenerator class
+#####
+
+class ImageActivationGenerator():
+  ##### Init #####
+  def __init__(
+  self,
+  model_wrapper,
+  concept_images_dir,
+  cache_dir,
+  preprocessing_function = None,
+  max_examples=500,
+  ):
+    self.model_wrapper = model_wrapper
+    self.concept_images_dir = concept_images_dir
+    self.cache_dir = cache_dir
+    self.max_examples = max_examples
+    self.preprocessing_function = preprocessing_function
+
+  def get_feature_maps_for_concept(self, concept, layer, imgs=None):
+    if imgs is None:
+      imgs = _get_images_for_concept(concept)
+    feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
+    return feature_maps
+
+  def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True):
+    feature_maps = {}
+    if self.cache_dir and not os.path.exists(self.cache_dir):
+      os.makedirs(self.cache_dir)
+
+    # For each concept
+    for concept in concepts:
+      imgs = _get_images_for_concept(concept)
+      if concept not in feature_maps:
+        feature_maps[concept] = {}
+      # For each layer
+      for layer_name in layer_names:
+        feature_maps_path = os.path.join(self.cache_dir, 'f_maps_{}_{}.joblib'.format(concept, layer_name)) if self.cache_dir else None
+
+        if feature_maps_path and os.path.exists(feature_maps_path) and cache:
+          # Read from cache
+          feature_maps[concept][layer_name] = load(feature_maps_path)
+
+        else:
+        # Compute and write to cache
+          feature_maps[concept][layer_name] = self.get_feature_maps_for_concept(concept, layer_name, imgs)
+
+      if feature_maps_path and cache:
+        os.mkdir(os.path.dirname(feature_maps_path))
+        dump(feature_maps[concept][layer_name], feature_maps_path, compress=9)
+
+    # Return the feature maps
+    return feature_maps
+
+  def _get_images_for_concept(self, concept, preprocess=True):
+    concept_folder = os.path.join(self.concept_images_dir, concept)
+    return _load_ImageFolder(concept_folder)
+
+  def _load_ImageFolder(self, images_folder_path, shape= (224,224), preprocess=True):
+    if self.preprocessing_function is not None and preprocess:
+      transform = transforms.Compose([
+        transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+        transforms.ToTensor(),
+        self.preprocessing_function
+    ])
+
+    else:
+      transform = transforms.Compose([
+          transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+          transforms.ToTensor()
+      ])
+
+    # Carica il dataset utilizzando ImageFolder
+    x = datasets.ImageFolder(root=images_folder_path, transform=transform)
+    return x
