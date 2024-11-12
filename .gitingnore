@@ -1,1 +1,34 @@
-.DS_Store
+# Ambiente virtuale (escludere la cartella venv o env)
+venv/
+env/
+
+# File di configurazione dell'ambiente in PyCharm (cartelle di progetto di PyCharm)
+.idea/
+
+# Cache e file compilati di Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# File di log
+*.log
+
+# Cartella di distribuzione
+build/
+dist/
+
+# File di configurazione di sistema o ambiente
+*.env
+*.DS_Store  # (macOS)
+Thumbs.db   # (Windows)
+
+# File di librerie e pacchetti generati
+*.egg-info/
+.eggs/
+
+# File Jupyter Notebook di backup
+.ipynb_checkpoints/
+
+# File di configurazione per specifici editor (VS Code, ecc.)
+.vscode/

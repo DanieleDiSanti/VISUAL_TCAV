@@ -1,5 +1,8 @@
 # Do not generate "__pycache__" folder
 import sys
+
+from torch.utils.data import DataLoader
+
 sys.dont_write_bytecode = True
 
 import os
@@ -26,36 +29,32 @@ import seaborn as sns
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-import tensorflow as tf
+#import tensorflow as tf
 #import tensorflow_probability as tfp
 
-import pyTorch as torch
 import os
 import torch
 import torch.nn.functional as F
 from joblib import dump, load
-import torch
 import torchvision.transforms as transforms
 from torchvision import datasets, transforms
 from PIL import Image
 import os
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from tqdm import tqdm
 
 IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
 IMAGENET_STD 	= [0.229, 0.224, 0.225]
 
 # Keras preprocessing functions
-preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+preprocess_resnet_v2 = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 #preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
 #####
 # Model class
 #####
 
-RESNET_LAYERS = ['layer1','layer2', 'layer3', 'layer4', 'avgpool', 'linear']
+RESNET_LAYERS = ['layer1', 'layer2', 'layer3', 'layer4', 'avgpool', 'linear']
 RESNET_LAYERS_TENSORS = {
 	'layer1': (3,224,224),
 	'layer2': (256,56,56),
@@ -121,7 +120,20 @@ class FeatureMapsModel(nn.Module):
 		return layer_names.index(self.layer_name)
 
 	def forward(self, x):
-		return self.layers(x)
+		# Manda il modello su GPU se disponibile
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.model = self.model.to(device)
+
+		# Itera sui batch e fai una predizione
+		self.model.eval()  # Imposta il modello in modalità di valutazione
+		with torch.no_grad():  # Disabilita il calcolo del gradiente
+			for inputs, labels in x:
+				inputs = inputs.to(device)
+				labels = labels.to(device)
+
+				# Passa gli input nel modello
+				outputs = self.layers(inputs)
+		return outputs
 
 
 # From Feature Maps of a selected Layer to Logits
@@ -204,26 +216,11 @@ class TorchModelWrapper:
 		if layer_name not in self.simulated_layer_model:
 			self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name)
 
-		imgs = torch.tensor(imgs, dtype=torch.float32)
-		feature_maps = []
-
-		# Elaborazione per batch
-		with torch.no_grad():  # Disattiva il calcolo del gradiente per l'inferenza
-			for i in range(0, len(imgs), self.batch_size):
-				# Prepara il batch corrente
-				batch_imgs = imgs[i:i+self.batch_size]
-
-				# Passa il batch attraverso il modello
-				output = self.simulated_layer_model[layer_name].foward(batch_imgs)
-
-				# Aggiunge le feature maps del layer specificato
-				feature_maps.append(output.cpu().numpy())
-
-		# Concatena le feature maps di tutti i batch
-		feature_maps = np.concatenate(feature_maps, axis=0)
-
-		# Ritorna le feature maps
+		# Crea il DataLoader
+		dataloader = DataLoader(imgs, batch_size=32, shuffle=False)
+		feature_maps = self.simulated_layer_model[layer_name].forward(dataloader)
 		return feature_maps
+
 
 	##### Get the logits given a layer and one or more input(s) #####
 	def get_logits(self, feature_maps, layer_name):
@@ -279,7 +276,7 @@ class TorchModelWrapper:
 	# Util to get the layer tensors
 	def _get_layer_tensors(self):
 		self.layer_tensors = {}
-		self.layers = self.model.layers
+		#self.layers = self.model.layers
 		if self.model_name == 'Resnet50_V2':
 			self.layers = RESNET_LAYERS
 			self.layer_tensors = RESNET_LAYERS_TENSORS
