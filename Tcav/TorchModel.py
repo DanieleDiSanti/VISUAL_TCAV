@@ -119,21 +119,20 @@ class FeatureMapsModel(nn.Module):
 			raise ValueError(f"Layer {self.layer_name} not found in the model.")
 		return layer_names.index(self.layer_name)
 
-	def forward(self, x):
-		# Manda il modello su GPU se disponibile
+	# Usa DataLoader
+	def forward(self, data):
+		outputs = []
 		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.model = self.model.to(device)
 
-		# Itera sui batch e fai una predizione
-		self.model.eval()  # Imposta il modello in modalità di valutazione
-		with torch.no_grad():  # Disabilita il calcolo del gradiente
-			for inputs, labels in x:
-				inputs = inputs.to(device)
-				labels = labels.to(device)
+		self.model.eval()
+		with torch.no_grad():
+			for batch_input, labels in data:
+				batch_input = batch_input.to(device)
+				batch_output = self.layers(batch_input)
+				outputs.append(batch_output.detach().cpu())
 
-				# Passa gli input nel modello
-				outputs = self.layers(inputs)
-		return outputs
+		return torch.cat(outputs, dim=0)
 
 
 # From Feature Maps of a selected Layer to Logits
