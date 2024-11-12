@@ -5,7 +5,7 @@ sys.dont_write_bytecode = True
 import os
 import numpy as np
 from joblib import dump, load
-import PIL.Image, PIL.ImageFilter
+#import PIL.Image, PIL.ImageFilter
 from tqdm import tqdm
 from multiprocessing import dummy as multiprocessing
 from prettytable import PrettyTable
@@ -57,13 +57,14 @@ preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=
 
 RESNET_LAYERS = ['layer1','layer2', 'layer3', 'layer4', 'avgpool', 'linear']
 RESNET_LAYERS_TENSORS = {
-    'layer1': (3,224,224),
-    'layer2': (256,56,56),
-    'layer3': (512,28,28),
-    'layer4': (1024,14,14),
-    'avgpool': (2048,7,7),
-    'linear' : (1,2048)
+	'layer1': (3,224,224),
+	'layer2': (256,56,56),
+	'layer3': (512,28,28),
+	'layer4': (1024,14,14),
+	'avgpool': (2048,7,7),
+	'linear' : (1,2048)
 }
+
 
 class Model:
 
@@ -104,81 +105,76 @@ class Model:
 #####
 # TorchModelWrapper class
 #####
-#From Image Input to Feature Maps of a selected Layer
+
+# From Image Input to Feature Maps of a selected Layer
 class FeatureMapsModel(nn.Module):
-  def __init__(self, model, layer_name):
-    super(FeatureMapsModel, self).__init__()
-    self.model = model
-    self.layer_name = layer_name
+	def __init__(self, model, layer_name):
+		super(FeatureMapsModel, self).__init__()
+		self.model = model
+		self.layer_name = layer_name
+		self.layers = nn.Sequential(*list(model.children())[:self._get_layer_index() + 1])
 
-    # Crea un sottogruppo del modello fino al livello desiderato
-    self.layers = nn.Sequential(*list(model.children())[:self._get_layer_index() + 1])
+	def _get_layer_index(self):
+		layer_names = [name for name, _ in self.model.named_children()]
+		if self.layer_name not in layer_names:
+			raise ValueError(f"Layer {self.layer_name} not found in the model.")
+		return layer_names.index(self.layer_name)
 
-  def _get_layer_index(self):
-    """Trova l'indice del livello specificato nel modello."""
-    layer_names = [name for name, _ in self.model.named_children()]
-    if self.layer_name not in layer_names:
-      raise ValueError(f"Layer {self.layer_name} not found in the model.")
-    return layer_names.index(self.layer_name)
-
-  def forward(self, x):
-    return self.layers(x)
+	def forward(self, x):
+		return self.layers(x)
 
 
-
-#From Feature Maps of a selected Layer to Logits
-#LayerName must be the next Layer from where the fmap come
+# From Feature Maps of a selected Layer to Logits
+# LayerName must be the next Layer from where the fmap come
 class LogitsModel(nn.Module):
-  def __init__(self, model, layer_name):
-    super(LogitsModel, self).__init__()
-    self.model = model
-    self.layer_name = layer_name
-    self.avg_layer = [i for i in model.modules()][-2]
-    self.lin_layer = [i for i in model.modules()][-1]
+	def __init__(self, model, layer_name):
+		super(LogitsModel, self).__init__()
+		self.model = model
+		self.layer_name = layer_name
+		self.avg_layer = [i for i in model.modules()][-2]
+		self.lin_layer = [i for i in model.modules()][-1]
+		# Crea un sottogruppo del modello fino al livello desiderato
+		self.conv_layers =  nn.Sequential(*list(model.children())[self._get_layer_index():-2])
 
-    # Crea un sottogruppo del modello fino al livello desiderato
-    self.conv_layers =  nn.Sequential(*list(model.children())[self._get_layer_index():-2])
+	def _get_layer_index(self):
+		"""Trova l'indice del livello specificato nel modello."""
+		layer_names = [name for name, _ in self.model.named_children()]
+		if self.layer_name not in layer_names:
+			raise ValueError(f"Layer {self.layer_name} not found in the model.")
+		return layer_names.index(self.layer_name)
 
-  def _get_layer_index(self):
-    """Trova l'indice del livello specificato nel modello."""
-    layer_names = [name for name, _ in self.model.named_children()]
-    if self.layer_name not in layer_names:
-      raise ValueError(f"Layer {self.layer_name} not found in the model.")
-    return layer_names.index(self.layer_name)
-
-  def forward(self, x):
-    if len(self.conv_layers) > 0:
-      x = self.conv_layers(x)
-    x = self.avg_layer(x).reshape(RESNET_LAYERS_TENSORS['linear'])
-    x = self.lin_layer(x)
-    return x
+	def forward(self, x):
+		if len(self.conv_layers) > 0:
+			x = self.conv_layers(x)
+		x = self.avg_layer(x).reshape(RESNET_LAYERS_TENSORS['linear'])
+		x = self.lin_layer(x)
+		return x
 
 
 class TorchModelWrapper:
-    def __init__(self, model_path, labels_path, batch_size, model_name):
-	    # Model details
-	    self.model_name = model_name        # Model name
-	    self.layers = []                    # Layer names
-	    self.layer_tensors = None           # Tensors
+	def __init__(self, model_path, labels_path, batch_size, model_name):
+		# Model details
+		self.model_name = model_name        # Model name
+		self.layers = []                    # Layer names
+		self.layer_tensors = None           # Tensors
 
-	    # Simulated models for specific purposes
-	    self.simulated_layer_model = {}     # Simulated "layer" model
-	    self.simulated_logits_model = {}    # Simulated "logits" model
+		# Simulated models for specific purposes
+		self.simulated_layer_model = {}     # Simulated "layer" model
+		self.simulated_logits_model = {}    # Simulated "logits" model
 
-	    # Batching
-	    self.batch_size = batch_size
+		# Batching
+		self.batch_size = batch_size
 
-	    # Load model
-	    self.model = torch.load(model_path)
-	    self.model.eval()  # Set to evaluation mode
+		# Load model
+		self.model = torch.load(model_path)
+		self.model.eval()  # Set to evaluation mode
 
-	    # Fetch layer names and tensors
-	    self._get_layer_tensors()
+		# Fetch layer names and tensors
+		self._get_layer_tensors()
 
-	    # Load labels
-	    with open(labels_path, 'r') as f:
-	        self.labels = f.read().splitlines()
-
+		# Load labels
+		with open(labels_path, 'r') as f:
+			self.labels = f.read().splitlines()
 
 	##### Get the class label from its id #####
 	def id_to_label(self, idx):
@@ -191,50 +187,43 @@ class TorchModelWrapper:
 	##### Get the prediction(s) given one or more input(s) #####
 	def get_predictions(self, imgs):
 		# Convert inputs to float32 and move to device (e.g., GPU) if available
-	    inputs = imgs.float().to(self.device)
+		inputs = imgs.float().to(self.device)
 
-	    # Set the model to evaluation mode
-	    self.model.eval()
+		# Set the model to evaluation mode
+		self.model.eval()
 
-	    # Disable gradient computation for inference
-	    with torch.no_grad():
-	        predictions = self.model(inputs)
+		# Disable gradient computation for inference
+		with torch.no_grad():
+			predictions = self.model(inputs)
 
-	    # Return the predictions
-	    return predictions
-
-
+		# Return the predictions
+		return predictions
 
 	##### Get the feature maps given one or more input(s) #####
-
 	def get_feature_maps(self, imgs, layer_name):
-        # Verifica se il layer_name è valido
-        if layer_name not in self.simulated_layer_model:
-            self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model,layer_name)
+		if layer_name not in self.simulated_layer_model:
+			self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name)
 
-        # Assicura che le immagini siano un tensor di PyTorch
-        imgs = torch.tensor(imgs, dtype=torch.float32)
+		imgs = torch.tensor(imgs, dtype=torch.float32)
+		feature_maps = []
 
-        # Lista per salvare le feature maps di ogni batch
-        feature_maps = []
+		# Elaborazione per batch
+		with torch.no_grad():  # Disattiva il calcolo del gradiente per l'inferenza
+			for i in range(0, len(imgs), self.batch_size):
+				# Prepara il batch corrente
+				batch_imgs = imgs[i:i+self.batch_size]
 
-        # Elaborazione per batch
-        with torch.no_grad():  # Disattiva il calcolo del gradiente per l'inferenza
-            for i in range(0, len(imgs), self.batch_size):
-                # Prepara il batch corrente
-                batch_imgs = imgs[i:i+self.batch_size]
+				# Passa il batch attraverso il modello
+				output = self.simulated_layer_model[layer_name].foward(batch_imgs)
 
-                # Passa il batch attraverso il modello
-                output = self.simulated_layer_model[layer_name].foward(batch_imgs)
+				# Aggiunge le feature maps del layer specificato
+				feature_maps.append(output.cpu().numpy())
 
-                # Aggiunge le feature maps del layer specificato
-                feature_maps.append(output.cpu().numpy())
+		# Concatena le feature maps di tutti i batch
+		feature_maps = np.concatenate(feature_maps, axis=0)
 
-        # Concatena le feature maps di tutti i batch
-        feature_maps = np.concatenate(feature_maps, axis=0)
-
-        # Ritorna le feature maps
-        return feature_maps
+		# Ritorna le feature maps
+		return feature_maps
 
 	##### Get the logits given a layer and one or more input(s) #####
 	def get_logits(self, feature_maps, layer_name):
@@ -259,21 +248,21 @@ class TorchModelWrapper:
 		# Executing the gradients computation (batching)
 		gradients = []
 		# Process in batches
-        for i in range(0, len(feature_maps), self.batch_size):
-            inputs = feature_maps[i : i + self.batch_size]
-            inputs = torch.tensor(inputs, dtype=torch.float32, requires_grad=True)
+		for i in range(0, len(feature_maps), self.batch_size):
+			inputs = feature_maps[i : i + self.batch_size]
+			inputs = torch.tensor(inputs, dtype=torch.float32, requires_grad=True)
 
-            # Forward pass to get logits and compute gradients
-            logits = self.simulated_logits_model[layer_name].forward(inputs)
-            logit = logits[:, target_class_index]  # Select logits for target class
+			# Forward pass to get logits and compute gradients
+			logits = self.simulated_logits_model[layer_name].forward(inputs)
+			logit = logits[:, target_class_index]  # Select logits for target class
 
-            # Compute gradients
-            logit_sum = logit.sum()  # Sum for batch processing
-            logit_sum.backward()
+			# Compute gradients
+			logit_sum = logit.sum()  # Sum for batch processing
+			logit_sum.backward()
 
-            # Retrieve gradients for inputs
-            gradients_batch = inputs.grad.detach().numpy()
-            gradients.append(gradients_batch)
+			# Retrieve gradients for inputs
+			gradients_batch = inputs.grad.detach().numpy()
+			gradients.append(gradients_batch)
 
 
 		# Return the gradients
@@ -289,91 +278,87 @@ class TorchModelWrapper:
 
 	# Util to get the layer tensors
 	def _get_layer_tensors(self):
-	  self.layer_tensors = {}
-	  self.layers = self.model.layers
-	  if self.model_name == 'ResNet50_V2':
-	    self.layers = RESNET_LAYERS
-	    self.layer_tensors = RESNET_LAYERS_TENSORS
-
-
-
-
+		self.layer_tensors = {}
+		self.layers = self.model.layers
+		if self.model_name == 'Resnet50_V2':
+			self.layers = RESNET_LAYERS
+			self.layer_tensors = RESNET_LAYERS_TENSORS
 #####
 
 
 #####
 # ImageActivationGenerator class
 #####
+class ImageActivationGenerator:
+	##### Init #####
+	def __init__(
+		self,
+		model_wrapper,
+		concept_images_dir,
+		cache_dir,
+		preprocessing_function = None,
+		max_examples=500,
+	):
+		self.model_wrapper = model_wrapper
+		self.concept_images_dir = concept_images_dir
+		self.cache_dir = cache_dir
+		self.max_examples = max_examples
+		self.preprocessing_function = preprocessing_function
 
-class ImageActivationGenerator():
-  ##### Init #####
-  def __init__(
-  self,
-  model_wrapper,
-  concept_images_dir,
-  cache_dir,
-  preprocessing_function = None,
-  max_examples=500,
-  ):
-    self.model_wrapper = model_wrapper
-    self.concept_images_dir = concept_images_dir
-    self.cache_dir = cache_dir
-    self.max_examples = max_examples
-    self.preprocessing_function = preprocessing_function
+	def get_feature_maps_for_concept(self, concept, layer, imgs=None):
+		if imgs is None:
+			imgs = self._get_images_for_concept(concept)
+		feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
+		return feature_maps
 
-  def get_feature_maps_for_concept(self, concept, layer, imgs=None):
-    if imgs is None:
-      imgs = _get_images_for_concept(concept)
-    feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
-    return feature_maps
+	def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True):
+		feature_maps = {}
+		if self.cache_dir and not os.path.exists(self.cache_dir):
+			os.makedirs(self.cache_dir)
 
-  def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True):
-    feature_maps = {}
-    if self.cache_dir and not os.path.exists(self.cache_dir):
-      os.makedirs(self.cache_dir)
+	# For each concept
+		for concept in concepts:
+			imgs = self._get_images_for_concept(concept)
+			if concept not in feature_maps:
+				feature_maps[concept] = {}
 
-    # For each concept
-    for concept in concepts:
-      imgs = _get_images_for_concept(concept)
-      if concept not in feature_maps:
-        feature_maps[concept] = {}
-      # For each layer
-      for layer_name in layer_names:
-        feature_maps_path = os.path.join(self.cache_dir, 'f_maps_{}_{}.joblib'.format(concept, layer_name)) if self.cache_dir else None
+			# For each layer
+			for layer_name in layer_names:
+				feature_maps_path = os.path.join(self.cache_dir, 'f_maps_{}_{}.joblib'.format(concept, layer_name)) if self.cache_dir else None
 
-        if feature_maps_path and os.path.exists(feature_maps_path) and cache:
-          # Read from cache
-          feature_maps[concept][layer_name] = load(feature_maps_path)
+				if feature_maps_path and os.path.exists(feature_maps_path) and cache:
+					# Read from cache
+					feature_maps[concept][layer_name] = load(feature_maps_path)
 
-        else:
-        # Compute and write to cache
-          feature_maps[concept][layer_name] = self.get_feature_maps_for_concept(concept, layer_name, imgs)
+				else:
+				# Compute and write to cache
+					feature_maps[concept][layer_name] = self.get_feature_maps_for_concept(concept, layer_name, imgs)
 
-      if feature_maps_path and cache:
-        os.mkdir(os.path.dirname(feature_maps_path))
-        dump(feature_maps[concept][layer_name], feature_maps_path, compress=9)
+				if feature_maps_path and cache:
+					os.mkdir(os.path.dirname(feature_maps_path))
+					dump(feature_maps[concept][layer_name], feature_maps_path, compress=9)
 
-    # Return the feature maps
-    return feature_maps
+		# Return the feature maps
+		return feature_maps
 
-  def _get_images_for_concept(self, concept, preprocess=True):
-    concept_folder = os.path.join(self.concept_images_dir, concept)
-    return _load_ImageFolder(concept_folder)
+	def _get_images_for_concept(self, concept, preprocess=True):
+		concept_folder = os.path.join(self.concept_images_dir, concept)
+		return self._load_ImageFolder(concept_folder, preprocess)
 
-  def _load_ImageFolder(self, images_folder_path, shape= (224,224), preprocess=True):
-    if self.preprocessing_function is not None and preprocess:
-      transform = transforms.Compose([
-        transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
-        transforms.ToTensor(),
-        self.preprocessing_function
-    ])
+	def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
+		if self.preprocessing_function is not None and preprocess:
+			transform = transforms.Compose([
+				transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+				transforms.ToTensor(),
+				self.preprocessing_function
+			])
 
-    else:
-      transform = transforms.Compose([
-          transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
-          transforms.ToTensor()
-      ])
+		else:
+			transform = transforms.Compose([
+				transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+				transforms.ToTensor()
+			])
 
-    # Carica il dataset utilizzando ImageFolder
-    x = datasets.ImageFolder(root=images_folder_path, transform=transform)
-    return x
+		# Carica il dataset utilizzando ImageFolder
+		x = datasets.ImageFolder(root=images_folder_path, transform=transform)
+		return x
