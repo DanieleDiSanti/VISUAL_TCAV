@@ -193,56 +193,56 @@ class CustomColormap:
 		return self.alpha
 
 
-def show_activation_maps(model, img, layers, use_mean_vec=True):
-  n_layers = len(layers)
-  fig, axes = plt.subplots(n_layers + 1, 2, figsize=(10, 15),gridspec_kw={'width_ratios': [10, 1]})
+def show_activation_maps(model, img, layers, use_mean_vec=True, cmap='inferno'):
+	n_layers = len(layers)
+	fig, axes = plt.subplots(n_layers + 1, 2, figsize=(10, 15), gridspec_kw={'width_ratios': [10, 1]})
 
-  #Original Image
-  title = f'Image\nShape {np.array(img.detach().cpu()).shape}'
-  axes[0, 0].set_title(title)
-  cax = axes[0, 0].imshow(img.permute(1, 2, 0))
-  fig.colorbar(cax, ax=axes[0, 0], orientation='vertical')
-  cax = axes[0, 1].imshow(np.ones((10,1)))
-  fig.colorbar(cax, ax=axes[0, 1], orientation='vertical')
-  axes[0, 1].xaxis.set_visible(False)
+	# Original Image
+	title = f'Image\nShape {np.array(img.detach().cpu()).shape}'
+	axes[0, 0].set_title(title)
+	cax = axes[0, 0].imshow(img.permute(1, 2, 0), cmap=cmap)
+	fig.colorbar(cax, ax=axes[0, 0], orientation='vertical')
+	cax = axes[0, 1].imshow(np.ones((10, 1)), cmap=cmap)
+	fig.colorbar(cax, ax=axes[0, 1], orientation='vertical')
+	axes[0, 1].xaxis.set_visible(False)
 
+	# Feature Maps and Feature Vectors
+	for layer in range(0, n_layers):
+		layer_model = layers[layer]
+		row = layer + 1
 
-  #Feature Maps and Feature Vectors
-  for layer in range(0, n_layers):
-      layer_model = layers[layer]
-      row = layer + 1
+		fmaps = layer_model.forward(img.unsqueeze(0))[0]
+		mean_values = fmaps.mean(axis=(1, 2))
+		max_index = torch.argmax(mean_values)
 
-      fmaps = layer_model.forward(img.unsqueeze(0)).detach().numpy()
+		# Mostra la feature map del primo canale
+		title = f'Layer {layer + 1} - F_map N° {max_index}\n Shape {fmaps.squeeze().numpy().shape}'
+		axes[row, 0].set_title(title)
+		cax = axes[row, 0].imshow(fmaps[max_index], cmap=cmap)
+		fig.colorbar(cax, ax=axes[row, 0], orientation='vertical', label=f"Activation Value")
 
-      # Mostra la feature map del primo canale
-      title = f'Layer {layer+1}\n Shape {fmaps.squeeze().shape}'
-      axes[row, 0].set_title(title)
-      cax = axes[row, 0].imshow(fmaps[0, 0], cmap='viridis')
-      fig.colorbar(cax, ax=axes[row, 0], orientation='vertical', label=f"Activation Value")
+		# Calcola i valori medi o massimi per ogni canale
+		if use_mean_vec:
+			label = 'Mean'
+			mean_values = fmaps.mean(axis=(1, 2))
+		else:
+			label = 'Max'
+			mean_values = fmaps.max(axis=(1, 2))
 
+		# prendi solo le prime 10 fmaps per semplicità
+		mean_values_matrix = mean_values[max_index - 4:max_index + 5].reshape(-1, 1)
 
-      # Calcola i valori medi o massimi per ogni canale
-      if use_mean_vec:
-          label = 'Mean'
-          mean_values = fmaps[0].mean(axis=(1, 2))
-      else:
-          label = 'Max'
-          mean_values = fmaps[0].max(axis=(1, 2))
+		ax = axes[row, 1]
+		# Visualizza la matrice di calore
+		cax = axes[row, 1].imshow(mean_values_matrix, cmap=cmap, aspect='auto')
+		ax.xaxis.set_visible(False)
+		ax.set_ylabel("F_map")
+		ax.set_title("Activation Vector")
+		fig.colorbar(cax, ax=axes[row, 1], orientation='vertical', label=f"{label} Activation Value")
 
-      #prendi solo le prime 10 fmaps per semplicità
-      mean_values_matrix = mean_values[:10].reshape(-1, 1)
-
-      ax = axes[row,1]
-      # Visualizza la matrice di calore
-      cax = axes[row, 1].imshow(mean_values_matrix, cmap='viridis', aspect='auto')
-      ax.xaxis.set_visible(False)
-      ax.set_ylabel("Channel")
-      ax.set_title("Activation Vector")
-      fig.colorbar(cax, ax=axes[row, 1], orientation='vertical', label=f"{label} Activation Value")
-
-  # Imposta layout per evitare sovrapposizioni
-  plt.tight_layout()
-  plt.show()
+	# Imposta layout per evitare sovrapposizioni
+	plt.tight_layout()
+	plt.show()
 
 # Definition
 original_colormap = cm.jet

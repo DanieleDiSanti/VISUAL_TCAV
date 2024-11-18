@@ -1,26 +1,15 @@
 # Do not generate "__pycache__" folder
 import sys
-
 from torch.utils.data import DataLoader
-
+import numpy as np
+from prettytable import PrettyTable
+import torch
+from joblib import dump, load
+from torchvision import datasets, transforms
+import os
+import torch.nn as nn
 sys.dont_write_bytecode = True
 
-import os
-import numpy as np
-from joblib import dump, load
-#import PIL.Image, PIL.ImageFilter
-from tqdm import tqdm
-from multiprocessing import dummy as multiprocessing
-from prettytable import PrettyTable
-
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from scipy import stats
-from sklearn.metrics import accuracy_score
-
-from matplotlib import pyplot as plt, cm as cm
-from matplotlib.gridspec import GridSpec
-import seaborn as sns
 
 # Tensorflow
 # 0 = all messages are logged (default behavior)
@@ -29,22 +18,9 @@ import seaborn as sns
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-#import tensorflow as tf
-#import tensorflow_probability as tfp
 
-import os
-import torch
-import torch.nn.functional as F
-from joblib import dump, load
-import torchvision.transforms as transforms
-from torchvision import datasets, transforms
-from PIL import Image
-import os
-import torch.nn as nn
-from tqdm import tqdm
-
-IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
-IMAGENET_STD 	= [0.229, 0.224, 0.225]
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD  = [0.229, 0.224, 0.225]
 
 # Keras preprocessing functions
 preprocess_resnet_v2 = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
@@ -124,15 +100,21 @@ class FeatureMapsModel(nn.Module):
 		outputs = []
 		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.model = self.model.to(device)
-
 		self.model.eval()
-		with torch.no_grad():
-			for batch_input, labels in data:
-				batch_input = batch_input.to(device)
-				batch_output = self.layers(batch_input)
-				outputs.append(batch_output.detach().cpu())
 
-		return torch.cat(outputs, dim=0)
+		if type(data) == DataLoader:
+			with torch.no_grad():
+				for batch_input, labels in data:
+					batch_input = batch_input.to(device)
+					batch_output = self.layers(batch_input)
+					outputs.append(batch_output.detach().cpu())
+
+			return torch.cat(outputs, dim=0)
+
+		else:
+			with torch.no_grad():
+				data = data.to(device)
+				return self.layers(data).detach().cpu()
 
 
 # From Feature Maps of a selected Layer to Logits
@@ -155,11 +137,15 @@ class LogitsModel(nn.Module):
 		return layer_names.index(self.layer_name)
 
 	def forward(self, x):
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.model = self.model.to(device)
+		x = x.to(device)
+		self.model.eval()
 		if len(self.conv_layers) > 0:
 			x = self.conv_layers(x)
-		x = self.avg_layer(x).reshape(RESNET_LAYERS_TENSORS['linear'])
+		x = self.avg_layer(x).view(x.size(0), -1)  # Flatten before passing to linear layer
 		x = self.lin_layer(x)
-		return x
+		return x.detach().cpu()
 
 
 class TorchModelWrapper:
@@ -215,9 +201,7 @@ class TorchModelWrapper:
 		if layer_name not in self.simulated_layer_model:
 			self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name)
 
-		# Crea il DataLoader
-		dataloader = DataLoader(imgs, batch_size=32, shuffle=False)
-		feature_maps = self.simulated_layer_model[layer_name].forward(dataloader)
+		feature_maps = self.simulated_layer_model[layer_name].forward(imgs)
 		return feature_maps
 
 
@@ -226,7 +210,7 @@ class TorchModelWrapper:
 		#----TO TEST----
 		# Simulate a model with the logits (lazy)
 		if layer_name not in self.simulated_logits_model:
-			self.simulated_logits_model[layer_name] = LogitsModel(self.model,layer_name)
+			self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name)
 
 		# Feed the model with the inputs
 		logits = self.simulated_logits_model[layer_name].forward(feature_maps)
@@ -275,7 +259,6 @@ class TorchModelWrapper:
 	# Util to get the layer tensors
 	def _get_layer_tensors(self):
 		self.layer_tensors = {}
-		#self.layers = self.model.layers
 		if self.model_name == 'Resnet50_V2':
 			self.layers = RESNET_LAYERS
 			self.layer_tensors = RESNET_LAYERS_TENSORS
@@ -339,7 +322,8 @@ class ImageActivationGenerator:
 
 	def _get_images_for_concept(self, concept, preprocess=True):
 		concept_folder = os.path.join(self.concept_images_dir, concept)
-		return self._load_ImageFolder(concept_folder, preprocess)
+		img_folder = self._load_ImageFolder(concept_folder, preprocess)
+		return self._get_DataLoader(img_folder)
 
 	def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
 		if self.preprocessing_function is not None and preprocess:
@@ -358,3 +342,6 @@ class ImageActivationGenerator:
 		# Carica il dataset utilizzando ImageFolder
 		x = datasets.ImageFolder(root=images_folder_path, transform=transform)
 		return x
+
+	def _get_DataLoader(self, image_folder, batch_size=32, shuffle=False):
+		return DataLoader(image_folder, batch_size=batch_size, shuffle=shuffle)
