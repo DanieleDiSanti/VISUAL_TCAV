@@ -322,7 +322,7 @@ class ImageActivationGenerator:
 
 	def _get_images_for_concept(self, concept, preprocess=True, batch_size=30):
 		concept_folder = os.path.join(self.concept_images_dir, concept)
-		img_folder = self._load_ImageFolder(concept_folder, preprocess)
+		img_folder = self._load_ImageFolder(concept_folder, preprocess=preprocess)
 		return self._get_DataLoader(img_folder, batch_size)
 
 	def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
