@@ -183,17 +183,13 @@ class TorchModelWrapper:
 
 	##### Get the prediction(s) given one or more input(s) #####
 	def get_predictions(self, imgs):
-		# Convert inputs to float32 and move to device (e.g., GPU) if available
-		inputs = imgs.float().to(self.device)
-
-		# Set the model to evaluation mode
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		inputs = imgs.to(device)
 		self.model.eval()
 
-		# Disable gradient computation for inference
 		with torch.no_grad():
 			predictions = self.model(inputs)
 
-		# Return the predictions
 		return predictions
 
 	##### Get the feature maps given one or more input(s) #####
@@ -275,7 +271,7 @@ class ImageActivationGenerator:
 		model_wrapper,
 		concept_images_dir,
 		cache_dir,
-		preprocessing_function = None,
+		preprocessing_function=None,
 		max_examples=500,
 	):
 		self.model_wrapper = model_wrapper
@@ -290,12 +286,12 @@ class ImageActivationGenerator:
 		feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
 		return feature_maps
 
-	def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True, preprocess=True, batch_size=30):
+	def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True, preprocess=True, batch_size=30, verbose=False):
 		feature_maps = {}
 		if self.cache_dir and not os.path.exists(self.cache_dir):
 			os.makedirs(self.cache_dir)
 
-	# For each concept
+		# For each concept
 		for concept in concepts:
 			imgs = self._get_images_for_concept(concept, preprocess=preprocess, batch_size=batch_size)
 			if concept not in feature_maps:
@@ -303,19 +299,23 @@ class ImageActivationGenerator:
 
 			# For each layer
 			for layer_name in layer_names:
-				feature_maps_path = os.path.join(self.cache_dir, 'f_maps_{}_{}.joblib'.format(concept, layer_name)) if self.cache_dir else None
+				feature_maps_path = os.path.join(self.cache_dir, 'f_maps_{}_{}.joblib'.format(concept,layer_name)) if self.cache_dir else None
 
 				if feature_maps_path and os.path.exists(feature_maps_path) and cache:
+					if verbose:
+						print(f'Loading from cache: {feature_maps_path}')
 					# Read from cache
 					feature_maps[concept][layer_name] = load(feature_maps_path)
 
 				else:
-				# Compute and write to cache
+					# Compute and write to cache
 					feature_maps[concept][layer_name] = self.get_feature_maps_for_concept(concept, layer_name, imgs)
 
-				if feature_maps_path and cache:
-					os.mkdir(os.path.dirname(feature_maps_path))
-					dump(feature_maps[concept][layer_name], feature_maps_path, compress=9)
+					if feature_maps_path and cache:
+						if verbose:
+							print(f'Dumping to cache: {feature_maps_path}')
+						os.makedirs(os.path.dirname(feature_maps_path), exist_ok=True)
+						dump(feature_maps[concept][layer_name], feature_maps_path, compress=2)
 
 		# Return the feature maps
 		return feature_maps
