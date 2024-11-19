@@ -284,20 +284,20 @@ class ImageActivationGenerator:
 		self.max_examples = max_examples
 		self.preprocessing_function = preprocessing_function
 
-	def get_feature_maps_for_concept(self, concept, layer, imgs=None):
+	def get_feature_maps_for_concept(self, concept, layer, imgs=None, preprocess=True, batch_size=30):
 		if imgs is None:
-			imgs = self._get_images_for_concept(concept)
+			imgs = self._get_images_for_concept(concept, preprocess, batch_size)
 		feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
 		return feature_maps
 
-	def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True):
+	def get_feature_maps_for_layers_and_concepts(self, layer_names, concepts, cache=True, preprocess=True, batch_size=30):
 		feature_maps = {}
 		if self.cache_dir and not os.path.exists(self.cache_dir):
 			os.makedirs(self.cache_dir)
 
 	# For each concept
 		for concept in concepts:
-			imgs = self._get_images_for_concept(concept)
+			imgs = self._get_images_for_concept(concept, preprocess, batch_size)
 			if concept not in feature_maps:
 				feature_maps[concept] = {}
 
@@ -320,10 +320,10 @@ class ImageActivationGenerator:
 		# Return the feature maps
 		return feature_maps
 
-	def _get_images_for_concept(self, concept, preprocess=True):
+	def _get_images_for_concept(self, concept, preprocess=True, batch_size=30):
 		concept_folder = os.path.join(self.concept_images_dir, concept)
 		img_folder = self._load_ImageFolder(concept_folder, preprocess)
-		return self._get_DataLoader(img_folder)
+		return self._get_DataLoader(img_folder, batch_size)
 
 	def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
 		if self.preprocessing_function is not None and preprocess:
@@ -343,5 +343,11 @@ class ImageActivationGenerator:
 		x = datasets.ImageFolder(root=images_folder_path, transform=transform)
 		return x
 
-	def _get_DataLoader(self, image_folder, batch_size=32, shuffle=False):
+	def _get_DataLoader(self, image_folder, batch_size=30, shuffle=False):
+		n_imgs = len(image_folder)
+		if n_imgs % batch_size != 0:
+			print('WARNING: batch_size does not match the number of images!')
+			while n_imgs % batch_size != 0:
+				batch_size -= 1
+			print(f'New batch_size: {batch_size}')
 		return DataLoader(image_folder, batch_size=batch_size, shuffle=shuffle)
