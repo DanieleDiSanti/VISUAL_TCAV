@@ -286,7 +286,7 @@ class ImageActivationGenerator:
 
 	def get_feature_maps_for_concept(self, concept, layer, imgs=None, preprocess=True, batch_size=30):
 		if imgs is None:
-			imgs = self._get_images_for_concept(concept, preprocess, batch_size)
+			imgs = self._get_images_for_concept(concept, preprocess=preprocess, batch_size=batch_size)
 		feature_maps = self.model_wrapper.get_feature_maps(imgs, layer)
 		return feature_maps
 
@@ -297,7 +297,7 @@ class ImageActivationGenerator:
 
 	# For each concept
 		for concept in concepts:
-			imgs = self._get_images_for_concept(concept, preprocess, batch_size)
+			imgs = self._get_images_for_concept(concept, preprocess=preprocess, batch_size=batch_size)
 			if concept not in feature_maps:
 				feature_maps[concept] = {}
 
