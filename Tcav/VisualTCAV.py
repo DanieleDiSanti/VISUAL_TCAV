@@ -13,6 +13,12 @@
 
 # Do not generate "__pycache__" folder
 import sys
+import os
+import numpy as np
+from joblib import dump, load
+import torchvision
+import torch
+import torch.nn.functional as F
 
 from Tcav.LocalVisualTCAV import LocalVisualTCAV
 from Tcav.TorchModel import Model
@@ -20,53 +26,20 @@ from Tcav.utils import Predictions, Prediction, ConceptLayer, contraharmonic_mea
 
 sys.dont_write_bytecode = True
 
-import os
-import numpy as np
-from joblib import dump, load
-import PIL.Image, PIL.ImageFilter
-from tqdm import tqdm
-from multiprocessing import dummy as multiprocessing
-from prettytable import PrettyTable
-
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from scipy import stats
-from sklearn.metrics import accuracy_score
-
-from matplotlib import pyplot as plt, cm as cm
-from matplotlib.gridspec import GridSpec
-import seaborn as sns
-
-# Tensorflow
 # 0 = all messages are logged (default behavior)
 # 1 = INFO messages are not printed
 # 2 = INFO and WARNING messages are not printed
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-#import tensorflow_probability as tfp
-
-import os
-import torch
-import torch.nn.functional as F
-from joblib import dump, load
-import torch
-import torchvision
-import torchvision.transforms as transforms
-from PIL import Image
-import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
-
 IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
 IMAGENET_STD 	= [0.229, 0.224, 0.225]
 
-# Keras preprocessing functions
+# preprocessing functions
 preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 #preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
+
 
 def get_model_by_name(model_name):
 	if model_name == 'RESNET50':
@@ -161,7 +134,6 @@ class VisualTCAV:
 		# Return the classes
 		return Predictions(self.predictions, self.test_image_filename, self.model.model_name)
 
-
 	#####
 	# Private methods
 	#####
@@ -207,7 +179,7 @@ class VisualTCAV:
 		]
 
 	def _compute_integrated_gradients(self, feature_maps, layer_name, class_index):
-		#---TO TEST---
+		#---TODO---
 		# Generazione degli alphas per l'interpolazione
 		alphas = torch.linspace(start=0.0, end=1.0, steps=self.m_steps + 1)  # m_steps intervalli per la Riemann sum
 

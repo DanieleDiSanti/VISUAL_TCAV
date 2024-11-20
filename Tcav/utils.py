@@ -6,21 +6,18 @@
 #	Main classes
 #####
 
-
 #####
 # Imports
 #####
 # Do not generate "__pycache__" folder
 import sys
-sys.dont_write_bytecode = True
-
-import os
 import numpy as np
 from prettytable import PrettyTable
-from scipy import stats
 from matplotlib import pyplot as plt, cm as cm
-import tensorflow as tf
 import torch
+
+sys.dont_write_bytecode = True
+
 
 # Utils
 def cosine_similarity(vec1, vec2):
@@ -29,23 +26,23 @@ def cosine_similarity(vec1, vec2):
 	norm_vec2 = np.linalg.norm(vec2)
 	return dot_product / (norm_vec1 * norm_vec2)
 
+
 def nth_highest_index(arr, n):
-    indexed_arr = list(enumerate(arr))
-    sorted_arr = sorted(indexed_arr, key=lambda x: x[1], reverse=True)
-    return sorted_arr[n-1][0]
+	indexed_arr = list(enumerate(arr))
+	sorted_arr = sorted(indexed_arr, key=lambda x: x[1], reverse=True)
+	return sorted_arr[n-1][0]
+
 
 def contraharmonic_mean(arr, axis=(0, 1)):
-	#-----TO TEST--------
-	numerator = torch.sum(torch.square(arr), axis=axis)
+	x = torch.square(arr)
+	numerator = torch.sum(x, axis=axis)
 	denominator = torch.sum(arr, axis=axis)
-	return torch.divide(numerator, (torch.add(denominator, tf.keras.backend.epsilon())))
-
+	return torch.divide(numerator, (torch.add(denominator, 1e-10)))
 
 
 #####
 # ConceptLayer class
 #####
-
 class ConceptLayer:
 
 	##### Init #####
@@ -125,20 +122,18 @@ class Stat:
 
 	##### Init #####
 	def __init__(self, attributions):
-		#----TO DO----
 		# Attributes
 		self.attributions = attributions
 
 		# Simple
-		self.mean, self.std = tf.reduce_mean(self.attributions), np.std(self.attributions)
+		self.mean = torch.mean(torch.tensor(self.attributions, dtype=torch.float32))
+		self.std = torch.tensor(np.std(self.attributions, ddof=1), dtype=torch.float32)
 
 		# Compute confidence interval
-		#self.confidence = 0.95
 		self.n = len(self.attributions)
-		self.std_err = self.std/np.sqrt(self.n)
-		#self.h = self.std_err * stats.t.ppf((1 + self.confidence) / 2, self.n-1)
-		self.begin = tf.nn.relu(self.mean - self.std_err*2)
-		self.end = self.mean + self.std_err*2
+		self.std_err = self.std / torch.sqrt(torch.tensor(self.n, dtype=torch.float32))
+		self.begin = torch.relu(self.mean - self.std_err * 2)
+		self.end = self.mean + self.std_err * 2
 
 
 #####
@@ -193,7 +188,7 @@ class CustomColormap:
 		return self.alpha
 
 
-def show_activation_maps(model, img, layers, use_mean_vec=True, cmap='inferno'):
+def show_activation_maps(img, layers, use_mean_vec=True, cmap='inferno'):
 	n_layers = len(layers)
 	fig, axes = plt.subplots(n_layers + 1, 2, figsize=(10, 15), gridspec_kw={'width_ratios': [10, 1]})
 
@@ -247,6 +242,6 @@ def show_activation_maps(model, img, layers, use_mean_vec=True, cmap='inferno'):
 # Definition
 original_colormap = cm.jet
 colormap = CustomColormap(
-	nodes = [0.0, 0.05] + [i for i in np.linspace(0.1, 1.0, 100)],
-	colors = [(0,0,0,1), (0,0,0,1)] + [original_colormap(i) for i in np.linspace(0.15, 1.0, 100)]
+	nodes=[0.0, 0.05] + [i for i in np.linspace(0.1, 1.0, 100)],
+	colors=[(0, 0, 0, 1), (0, 0, 0, 1)] + [original_colormap(i) for i in np.linspace(0.15, 1.0, 100)]
 )

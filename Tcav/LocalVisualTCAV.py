@@ -3,10 +3,12 @@
 # Imports
 #####
 
-from Torch_VisualTCAV.utils import cosine_similarity, nth_highest_index, contraharmonic_mean
-
 # Do not generate "__pycache__" folder
 import sys
+
+from Tcav.VisualTCAV import VisualTCAV
+from Tcav.utils import CustomColormap
+
 sys.dont_write_bytecode = True
 
 import os
@@ -33,16 +35,15 @@ import seaborn as sns
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-import tensorflow as tf
 #import tensorflow_probability as tfp
 
-import pyTorch as torch
 import os
 import torch
 import torch.nn.functional as F
 from joblib import dump, load
 import torch
 import torchvision.transforms as transforms
+import torchvision
 from PIL import Image
 import os
 import torch
@@ -57,6 +58,13 @@ IMAGENET_STD 	= [0.229, 0.224, 0.225]
 preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 #preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
+
+# Definition
+original_colormap = cm.jet
+colormap = CustomColormap(
+	nodes = [0.0, 0.05] + [i for i in np.linspace(0.1, 1.0, 100)],
+	colors = [(0,0,0,1), (0,0,0,1)] + [original_colormap(i) for i in np.linspace(0.15, 1.0, 100)]
+)
 
 class LocalVisualTCAV(VisualTCAV):
 #---TO TEST---
@@ -96,6 +104,8 @@ class LocalVisualTCAV(VisualTCAV):
 		resized_img_tensor = tensor_transform(resized_img).unsqueeze(0)  # Aggiunge una dimensione per il batch
 
 		# Se hai una directory con più immagini, puoi usare un ciclo per caricarle tutte
+		# TODO
+		test_images_dir = ''
 		self.imgs = []
 		self.resized_imgs = []
 		for image_file in os.listdir(test_images_dir):
@@ -111,120 +121,120 @@ class LocalVisualTCAV(VisualTCAV):
 
 
 	def explain(self, cache_cav=True, cache_random=True, cav_only=False):
-    #----TO TEST----
-    # Checks
-    if not self.model:
-        raise Exception("Instantiate a Model first")
-    if not self.layers or not self.concepts:
-        raise Exception("Please add at least one concept and one layer first")
-    if not len(self.predictions):
-        raise Exception("Please let the model predict the classes first")
+		#----TO TEST----
+		# Checks
+		if not self.model:
+			raise Exception("Instantiate a Model first")
+		if not self.layers or not self.concepts:
+			raise Exception("Please add at least one concept and one layer first")
+		if not len(self.predictions):
+			raise Exception("Please let the model predict the classes first")
 
-    # Reset the computation variable
-    self.computations = {}
+		# Reset the computation variable
+		self.computations = {}
 
-    # For each layer
-    for layer_name in tqdm(self.layers, desc="Layers", position=0):
-        self.computations[layer_name] = {}
+		# For each layer
+		for layer_name in tqdm(self.layers, desc="Layers", position=0):
+			self.computations[layer_name] = {}
 
-        # Random activations
-        random_acts = self._compute_random_activations(cache_random, layer_name)
+			# Random activations
+			random_acts = self._compute_random_activations(cache_random, layer_name)
 
-        # Compute the feature maps
-        feature_maps = self.model.model_wrapper.get_feature_maps(
-            self.model.preprocessing_function(self.resized_imgs),
-            layer_name
-        )[0]
+			# Compute the feature maps
+			feature_maps = self.model.model_wrapper.get_feature_maps(
+				self.model.preprocessing_function(self.resized_imgs),
+				layer_name
+			)[0]
 
-        # Compute the CAVs
-        for concept_name in self.concepts:
-            # CAVs
-            concept_layer = self._compute_cavs(cache_cav, concept_name, layer_name, random_acts)
+			# Compute the CAVs
+			for concept_name in self.concepts:
+				# CAVs
+				concept_layer = self._compute_cavs(cache_cav, concept_name, layer_name, random_acts)
 
-            if not cav_only:
-                # Concept map
-                concept_layer.concept_map = F.relu(
-                    torch.sum(concept_layer.cav.direction[None, None, :] * feature_maps, dim=2)
-                )
+				if not cav_only:
+					# Concept map
+					concept_layer.concept_map = F.relu(
+						torch.sum(concept_layer.cav.direction[None, None, :] * feature_maps, dim=2)
+					)
 
-                # Normalize Concept Map
-                emblem_max, emblem_min = concept_layer.cav.concept_emblem
-                if emblem_max > emblem_min:
-                    concept_layer.concept_map = torch.clamp(concept_layer.concept_map, min=emblem_min, max=emblem_max)
-                    concept_layer.concept_map = (concept_layer.concept_map - emblem_min) / (emblem_max - emblem_min)
-                else:
-                    concept_layer.concept_map = concept_layer.concept_map * 0
+					# Normalize Concept Map
+					emblem_max, emblem_min = concept_layer.cav.concept_emblem
+					if emblem_max > emblem_min:
+						concept_layer.concept_map = torch.clamp(concept_layer.concept_map, min=emblem_min, max=emblem_max)
+						concept_layer.concept_map = (concept_layer.concept_map - emblem_min) / (emblem_max - emblem_min)
+					else:
+						concept_layer.concept_map = concept_layer.concept_map * 0
 
-            # Save the partial computations
-            self.computations[layer_name][concept_name] = concept_layer
+				# Save the partial computations
+				self.computations[layer_name][concept_name] = concept_layer
 
-        if not cav_only:
-            # Compute integrated gradients and attributions
-            attributions = {}
-            for n_class in range(self.n_classes):
-                if not self.model.binary_classification:
-                    logits = self.model.model_wrapper.get_logits(feature_maps.unsqueeze(0), layer_name)[0]
-                    logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps).unsqueeze(0), layer_name)[0]
+			if not cav_only:
+				# Compute integrated gradients and attributions
+				attributions = {}
+				for n_class in range(self.n_classes):
+					if not self.model.binary_classification:
+						logits = self.model.model_wrapper.get_logits(feature_maps.unsqueeze(0), layer_name)[0]
+						logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps).unsqueeze(0), layer_name)[0]
 
-                    ig_expected = F.relu(logits - logits_baseline)
+						ig_expected = F.relu(logits - logits_baseline)
 
-                    ig_expected_max_value = ig_expected.max()
-                    ig_expected_norm = ig_expected / ig_expected_max_value if ig_expected_max_value > 0 else ig_expected
+						ig_expected_max_value = ig_expected.max()
+						ig_expected_norm = ig_expected / ig_expected_max_value if ig_expected_max_value > 0 else ig_expected
 
-                    if self.target_class is not None:
-                        ig_expected_class = ig_expected_norm[self.target_class_index]
-                    else:
-                        ig_expected_class = ig_expected_norm[self.predictions[0][n_class].class_index]
+						if self.target_class is not None:
+							ig_expected_class = ig_expected_norm[self.target_class_index]
+						else:
+							ig_expected_class = ig_expected_norm[self.predictions[0][n_class].class_index]
 
-                # Compute attributions
-                if self.target_class is not None:
-                    ig = self._compute_integrated_gradients(feature_maps, layer_name, self.target_class_index)
-                elif self.model.binary_classification:
-                    ig = self._compute_integrated_gradients(feature_maps, layer_name, self.predictions[0][0].class_index)
-                else:
-                    ig = self._compute_integrated_gradients(feature_maps, layer_name, self.predictions[0][n_class].class_index)
+					# Compute attributions
+					if self.target_class is not None:
+						ig = self._compute_integrated_gradients(feature_maps, layer_name, self.target_class_index)
+					elif self.model.binary_classification:
+						ig = self._compute_integrated_gradients(feature_maps, layer_name, self.predictions[0][0].class_index)
+					else:
+						ig = self._compute_integrated_gradients(feature_maps, layer_name, self.predictions[0][n_class].class_index)
 
-                if self.model.binary_classification:
-                    binary_attributions = ig * feature_maps
-                    virtual_logit_0 = torch.sum(F.relu(binary_attributions))
-                    virtual_logit_1 = torch.sum(F.relu(-binary_attributions))
-                    max_virtual_logit = max(virtual_logit_0, virtual_logit_1)
-                    if max_virtual_logit > 0:
-                        virtual_logit_0 /= max_virtual_logit
-                        virtual_logit_1 /= max_virtual_logit
-                    if n_class == 0:
-                        attributions[n_class] = F.relu(binary_attributions)
-                        attributions[n_class] = attributions[n_class] * (virtual_logit_0 / (attributions[n_class].sum() + 1e-10))
-                    else:
-                        attributions[n_class] = F.relu(-binary_attributions)
-                        attributions[n_class] = attributions[n_class] * (virtual_logit_1 / (attributions[n_class].sum() + 1e-10))
-                else:
-                    attributions[n_class] = F.relu(ig * feature_maps)
-                    attributions[n_class] = attributions[n_class] * (ig_expected_class / (attributions[n_class].sum() + 1e-10))
+					if self.model.binary_classification:
+						binary_attributions = ig * feature_maps
+						virtual_logit_0 = torch.sum(F.relu(binary_attributions))
+						virtual_logit_1 = torch.sum(F.relu(-binary_attributions))
+						max_virtual_logit = max(virtual_logit_0, virtual_logit_1)
+						if max_virtual_logit > 0:
+							virtual_logit_0 /= max_virtual_logit
+							virtual_logit_1 /= max_virtual_logit
+						if n_class == 0:
+							attributions[n_class] = F.relu(binary_attributions)
+							attributions[n_class] = attributions[n_class] * (virtual_logit_0 / (attributions[n_class].sum() + 1e-10))
+						else:
+							attributions[n_class] = F.relu(-binary_attributions)
+							attributions[n_class] = attributions[n_class] * (virtual_logit_1 / (attributions[n_class].sum() + 1e-10))
+					else:
+						attributions[n_class] = F.relu(ig * feature_maps)
+						attributions[n_class] = attributions[n_class] * (ig_expected_class / (attributions[n_class].sum() + 1e-10))
 
-            # Iterate again on concepts and n_classes
-            for concept_name in self.concepts:
-                for n_class in range(self.n_classes):
+				# Iterate again on concepts and n_classes
+				for concept_name in self.concepts:
+					for n_class in range(self.n_classes):
 
-                    # Mask attributions
-                    masked_attributions = attributions[n_class] * self.computations[layer_name][concept_name].concept_map[:, :, None]
-                    pooled_masked_attributions = masked_attributions.sum(dim=(0, 1))
+						# Mask attributions
+						masked_attributions = attributions[n_class] * self.computations[layer_name][concept_name].concept_map[:, :, None]
+						pooled_masked_attributions = masked_attributions.sum(dim=(0, 1))
 
-                    # Pooled & normalized CAV
-                    if feature_maps.min() < 0:
-                        pooled_cav_norm = F.relu(
-                            self.computations[layer_name][concept_name].cav.direction *
-                            torch.where((feature_maps * self.computations[layer_name][concept_name].concept_map[:, :, None]).sum(dim=(0, 1)) < 0, -1.0, 1.0)
-                        )
-                    else:
-                        pooled_cav_norm = F.relu(self.computations[layer_name][concept_name].cav.direction)
+						# Pooled & normalized CAV
+						if feature_maps.min() < 0:
+							pooled_cav_norm = F.relu(
+								self.computations[layer_name][concept_name].cav.direction *
+								torch.where((feature_maps * self.computations[layer_name][concept_name].concept_map[:, :, None]).sum(dim=(0, 1)) < 0, -1.0, 1.0)
+							)
+						else:
+							pooled_cav_norm = F.relu(self.computations[layer_name][concept_name].cav.direction)
 
-                    max_cav = pooled_cav_norm.max()
-                    if max_cav > 0:
-                        pooled_cav_norm /= max_cav
+						max_cav = pooled_cav_norm.max()
+						if max_cav > 0:
+							pooled_cav_norm /= max_cav
 
-                    # Compute and save concept attributions
-                    self.computations[layer_name][concept_name].attributions[n_class] = torch.dot(pooled_cav_norm, pooled_masked_attributions)
+						# Compute and save concept attributions
+						self.computations[layer_name][concept_name].attributions[n_class] = torch.dot(pooled_cav_norm, pooled_masked_attributions)
 
 
 
