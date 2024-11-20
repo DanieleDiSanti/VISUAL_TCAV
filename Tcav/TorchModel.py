@@ -179,15 +179,25 @@ class TorchModelWrapper:
         return self.labels.index(label)
 
     ##### Get the prediction(s) given one or more input(s) #####
-    def get_predictions(self, imgs):
+    def get_predictions(self, data):
+        outputs = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        inputs = imgs.to(device)
+        self.model = self.model.to(device)
         self.model.eval()
 
-        with torch.no_grad():
-            predictions = self.model(inputs)
+        if type(data) == DataLoader:
+            with torch.no_grad():
+                for batch_input, labels in data:
+                    batch_input = batch_input.to(device)
+                    batch_output = self.model(batch_input)
+                    outputs.append(batch_output.detach().cpu())
 
-        return predictions
+            return torch.cat(outputs, dim=0)
+
+        else:
+            with torch.no_grad():
+                data = data.to(device)
+                return self.model(data).detach().cpu()
 
     ##### Get the feature maps given one or more input(s) #####
     def get_feature_maps(self, imgs, layer_name):
