@@ -185,12 +185,12 @@ class VisualTCAV:
 		]
 
 	def _compute_integrated_gradients(self, feature_maps, layer_name, class_index):
-		#---TODO---
+		feature_maps = feature_maps.detach().cpu()
 		# Generazione degli alphas per l'interpolazione
-		alphas = torch.linspace(start=0.0, end=1.0, steps=self.m_steps + 1)  # m_steps intervalli per la Riemann sum
+		alphas = torch.linspace(start=0.0, end=1.0, steps=self.m_steps)  # Alphas per interpolazioni
 
 		# Immagine di baseline con shape uguale a feature_maps
-		baseline = torch.zeros_like(feature_maps)
+		baseline = torch.zeros_like(feature_maps)  # Baseline di zeri con la stessa forma di fmap
 
 		# Interpolazione delle immagini
 		interpolated_images = self._interpolate_images(feature_maps, baseline, alphas)
@@ -199,27 +199,22 @@ class VisualTCAV:
 		grads = self.model.model_wrapper.get_gradient_of_score(interpolated_images, layer_name, class_index)
 
 		# Calcolo della media dei gradienti per ottenere Integrated Gradients
-		grads = torch.stack(grads)  # Assicuriamoci che grads sia un tensore di PyTorch
 		avg_grads = torch.mean((grads[:-1] + grads[1:]) / 2.0, dim=0)
 
 		return avg_grads
 
 	# Utils function to interpolate the feature maps
 	def _interpolate_images(self, feature_maps, baseline, alphas):
-			#----TO TEST----
-		# Converting feature_maps to float32
-		image = feature_maps.float()
 
-		# Expanding dimensions to match the shape of the tensors
 		alphas_x = alphas.view(-1, 1, 1, 1)
 		baseline_x = baseline.unsqueeze(0)
-		input_x = image.unsqueeze(0)
+		input_x = feature_maps.unsqueeze(0)
 
-		# Calculating the delta and interpolated images
 		delta = input_x - baseline_x
-		images = baseline_x + alphas_x * delta
+		interpolated_images = baseline_x + alphas_x * delta  # (steps, C, H, W)
 
-		return images
+		return interpolated_images
+
 
 	# Function to compute the negative examples activations for a given layer
 	def _compute_random_activations(self, cache, layer_name):
