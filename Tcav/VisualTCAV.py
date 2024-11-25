@@ -19,10 +19,10 @@ from joblib import dump, load
 import torchvision
 import torch
 import torch.nn.functional as F
-
-from LocalVisualTCAV import LocalVisualTCAV
 from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
+
 from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
+
 
 sys.dont_write_bytecode = True
 
@@ -63,6 +63,7 @@ class VisualTCAV:
 		batch_size=250,
 		models_dir=None, cache_dir=None, test_images_dir=None, concept_images_dir=None, random_images_folder=None
 	):
+		self.tcav_type = 'abstract'
 		# Folders and directories
 		self.models_dir = os.path.join(visual_tcav_dir, "Models") if not models_dir else models_dir
 		self.cache_base_dir = os.path.join(visual_tcav_dir, "cache") if not cache_dir else cache_dir
@@ -114,7 +115,7 @@ class VisualTCAV:
 	def predict(self, no_sort=False):
 
 		# Checks
-		if not isinstance(self, LocalVisualTCAV):
+		if not self.tcav_type == 'local':
 			raise Exception("Please use a local explainer")
 		if not self.model:
 			raise Exception("Please instantiate a Model first")

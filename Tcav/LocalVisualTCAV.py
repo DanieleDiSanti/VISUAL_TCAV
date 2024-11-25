@@ -18,8 +18,9 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from VisualTCAV import VisualTCAV
 from utils import CustomColormap
+from VisualTCAV import VisualTCAV
+
 
 # Do not generate "__pycache__" folder
 sys.dont_write_bytecode = True
@@ -62,6 +63,8 @@ class LocalVisualTCAV(VisualTCAV):
 
 		# Super
 		super().__init__(**kwargs)
+
+		self.tcav_type = 'local'
 
 		# Local attributes
 		self.test_image_filename = test_image_filename
