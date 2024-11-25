@@ -20,9 +20,9 @@ import torchvision
 import torch
 import torch.nn.functional as F
 
-from Tcav.LocalVisualTCAV import LocalVisualTCAV
-from Tcav.TorchModel import Model
-from Tcav.utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
+from LocalVisualTCAV import LocalVisualTCAV
+from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
+from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
 
 sys.dont_write_bytecode = True
 
@@ -42,7 +42,7 @@ preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=
 
 
 def get_model_by_name(model_name):
-	if model_name == 'RESNET50':
+	if model_name == 'RESNET50_V2':
 		model_graph_path = 'Models/RESNET50/Resnet50_V2.pth'
 		model_labels_path = 'Models/RESNET50/ResNet50V2-imagenet-classes.txt'
 		return Model(model_name, model_graph_path, model_labels_path)
@@ -146,10 +146,15 @@ class VisualTCAV:
 		model.label_path_dir = os.path.join(self.models_dir, model.model_name, model.label_path_filename)
 
 		# Wrapper function
-		model.model_wrapper = model.model_wrapper(model.graph_path_dir, model.label_path_dir, self.batch_size)
+		model.model_wrapper = TorchModelWrapper(
+			model.graph_path_dir,
+			model.label_path_dir,
+			self.batch_size,
+			model.model_name
+		)
 
 		# Activate the model
-		model.activation_generator = model.activation_generator(
+		model.activation_generator = ImageActivationGenerator(
 			model_wrapper=model.model_wrapper,
 			concept_images_dir=self.concept_images_dir,
 			cache_dir=self.cache_dir,
@@ -234,7 +239,7 @@ class VisualTCAV:
 	# Compute pooled random
 	def _compute_random(self, layer_name):
 		feature_maps_for_concept = self.model.activation_generator.get_feature_maps_for_concept(
-			self.random_images_folder,
+			'random',
 			layer_name,
 		)
 		return feature_maps_for_concept
