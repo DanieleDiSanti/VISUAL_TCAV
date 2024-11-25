@@ -40,6 +40,12 @@ RESNET_LAYERS_TENSORS = {
 }
 
 
+def set_batch_size(len_data, size=30):
+    while len_data // size != 0:
+        size -= 1
+    return size
+
+
 class Model:
     ##### Init #####
     def __init__(self, model_name, graph_path_filename, label_path_filename, preprocessing_function=lambda x: x / 255,
@@ -210,7 +216,6 @@ class TorchModelWrapper:
 
     ##### Get the logits given a layer and one or more input(s) #####
     def get_logits(self, feature_maps, layer_name):
-        # ----TO TEST----
         if len(feature_maps.shape) == 3:
             feature_maps = feature_maps.unsqueeze(0)
         # Simulate a model with the logits (lazy)
@@ -225,16 +230,17 @@ class TorchModelWrapper:
 
     ##### Get the gradients given a layer and one or more input(s) #####
     def get_gradient_of_score(self, feature_maps, layer_name, target_class_index):
-        # ----TO TEST----
         # Executing the gradients computation (batching)
         gradients = []
+        self.batch_size = set_batch_size(len(feature_maps))
+
         # Process in batches
         for i in range(0, len(feature_maps), self.batch_size):
             inputs = feature_maps[i: i + self.batch_size]
             inputs = torch.tensor(inputs, dtype=torch.float32, requires_grad=True)
 
             # Forward pass to get logits and compute gradients
-            logits = self.get_logits(input, layer_name)
+            logits = self.get_logits(inputs, layer_name)
             logit = logits[:, target_class_index]  # Select logits for target class
 
             # Compute gradients
@@ -242,11 +248,11 @@ class TorchModelWrapper:
             logit_sum.backward()
 
             # Retrieve gradients for inputs
-            gradients_batch = inputs.grad.detach().numpy()
+            gradients_batch = inputs.grad.detach().cpu()
             gradients.append(gradients_batch)
 
         # Return the gradients
-        return np.array(gradients)
+        return torch.cat(gradients, dim=0)
 
     ##### Get wrapped model's image shape #####
     def get_image_shape(self):
