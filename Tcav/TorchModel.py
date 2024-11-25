@@ -1,4 +1,3 @@
-# Do not generate "__pycache__" folder
 import sys
 from torch.utils.data import DataLoader
 import numpy as np
@@ -9,6 +8,7 @@ from torchvision import datasets, transforms
 import os
 import torch.nn as nn
 
+# Do not generate "__pycache__" folder
 sys.dont_write_bytecode = True
 
 # Tensorflow
