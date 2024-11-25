@@ -41,7 +41,7 @@ RESNET_LAYERS_TENSORS = {
 
 
 def set_batch_size(len_data, size=30):
-    while len_data // size != 0:
+    while len_data % size != 0:
         size -= 1
     return size
 
