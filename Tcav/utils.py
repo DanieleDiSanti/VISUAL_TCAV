@@ -86,6 +86,11 @@ class Prediction:
 		self.class_index = class_index
 		self.confidence = confidence
 
+	def __str__(self):
+		print(f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}')
+
+	def __repr__(self):
+		print(f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}')
 
 #####
 # Predictions class
@@ -102,7 +107,7 @@ class Predictions:
 		self.model_name = model_name
 
 	##### Plot a table with the predictions information #####
-	def info(self, num_of_classes = 3):
+	def info(self, num_of_classes=3):
 		# Print a table with information
 		table = PrettyTable(title=f"Model: {self.model_name}", field_names=["Image", "Class name", "Confidence"], float_format='.2')
 		for i in range(min(num_of_classes, len(self.predictions[0]))):
@@ -112,6 +117,12 @@ class Predictions:
 				f"{self.predictions[0][i].confidence:.2g}"
 			])
 		print(table)
+
+	def __str__(self):
+		self.info()
+
+	def __repr__(self):
+		self.info()
 
 
 #####

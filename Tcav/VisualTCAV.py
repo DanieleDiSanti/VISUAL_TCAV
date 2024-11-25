@@ -180,7 +180,7 @@ class VisualTCAV:
 			Prediction(
 				class_index=sorted_element[0],
 				class_name=id_to_label(sorted_element[0]),
-				confidence=sorted_element[1],
+				confidence=float(sorted_element[1]),
 			) for i, sorted_element in enumerate(sorted_arr) if i < 10
 		]
 

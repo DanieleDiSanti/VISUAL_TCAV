@@ -104,14 +104,14 @@ class FeatureMapsModel(nn.Module):
                 for batch_input, labels in data:
                     batch_input = batch_input.to(device)
                     batch_output = self.layers(batch_input)
-                    outputs.append(batch_output.detach().cpu())
+                    outputs.append(batch_output)
 
             return torch.cat(outputs, dim=0)
 
         else:
             with torch.no_grad():
                 data = data.to(device)
-                return self.layers(data).detach().cpu()
+                return self.layers(data)
 
 
 # From Feature Maps of a selected Layer to Logits
@@ -142,7 +142,7 @@ class LogitsModel(nn.Module):
             x = self.conv_layers(x)
         x = self.avg_layer(x).view(x.size(0), -1)  # Flatten before passing to linear layer
         x = self.lin_layer(x)
-        return x.detach().cpu()
+        return x
 
 
 class TorchModelWrapper:
@@ -182,6 +182,7 @@ class TorchModelWrapper:
     def get_predictions(self, data):
         outputs = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        softmax = torch.nn.Softmax(dim=1)  # Softmax lungo l'asse delle classi
         self.model = self.model.to(device)
         self.model.eval()
 
@@ -189,7 +190,7 @@ class TorchModelWrapper:
             with torch.no_grad():
                 for batch_input, labels in data:
                     batch_input = batch_input.to(device)
-                    batch_output = self.model(batch_input)
+                    batch_output = softmax(self.model(batch_input))
                     outputs.append(batch_output.detach().cpu())
 
             return torch.cat(outputs, dim=0)
@@ -197,7 +198,7 @@ class TorchModelWrapper:
         else:
             with torch.no_grad():
                 data = data.to(device)
-                return self.model(data).detach().cpu()
+                return softmax(self.model(data)).detach().cpu()
 
     ##### Get the feature maps given one or more input(s) #####
     def get_feature_maps(self, imgs, layer_name):
@@ -210,6 +211,8 @@ class TorchModelWrapper:
     ##### Get the logits given a layer and one or more input(s) #####
     def get_logits(self, feature_maps, layer_name):
         # ----TO TEST----
+        if len(feature_maps.shape) == 3:
+            feature_maps = feature_maps.unsqueeze(0)
         # Simulate a model with the logits (lazy)
         if layer_name not in self.simulated_logits_model:
             self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name)
@@ -223,10 +226,6 @@ class TorchModelWrapper:
     ##### Get the gradients given a layer and one or more input(s) #####
     def get_gradient_of_score(self, feature_maps, layer_name, target_class_index):
         # ----TO TEST----
-        # Simulate a model with the logits (lazy)
-        if layer_name not in self.simulated_logits_model:
-            self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name, )
-
         # Executing the gradients computation (batching)
         gradients = []
         # Process in batches
@@ -235,7 +234,7 @@ class TorchModelWrapper:
             inputs = torch.tensor(inputs, dtype=torch.float32, requires_grad=True)
 
             # Forward pass to get logits and compute gradients
-            logits = self.simulated_logits_model[layer_name].forward(inputs)
+            logits = self.get_logits(input, layer_name)
             logit = logits[:, target_class_index]  # Select logits for target class
 
             # Compute gradients
