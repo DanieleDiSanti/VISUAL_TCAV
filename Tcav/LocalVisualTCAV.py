@@ -3,30 +3,27 @@
 # Imports
 #####
 
-# Do not generate "__pycache__" folder
-import sys
-
-from Tcav.VisualTCAV import VisualTCAV
-from Tcav.utils import CustomColormap
-
-sys.dont_write_bytecode = True
-
 import os
+import sys
+import PIL.Image
+import PIL.ImageFilter
 import numpy as np
-from joblib import dump, load
-import PIL.Image, PIL.ImageFilter
-from tqdm import tqdm
-from multiprocessing import dummy as multiprocessing
-from prettytable import PrettyTable
-
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from scipy import stats
-from sklearn.metrics import accuracy_score
-
 from matplotlib import pyplot as plt, cm as cm
 from matplotlib.gridspec import GridSpec
-import seaborn as sns
+import torchvision.transforms as transforms
+import torchvision
+from PIL import Image
+import os
+import torch
+import torch.nn.functional as F
+from tqdm import tqdm
+
+from VisualTCAV import VisualTCAV
+from utils import CustomColormap
+
+# Do not generate "__pycache__" folder
+sys.dont_write_bytecode = True
+
 
 # Tensorflow
 # 0 = all messages are logged (default behavior)
@@ -37,19 +34,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 #import tensorflow_probability as tfp
 
-import os
-import torch
-import torch.nn.functional as F
-from joblib import dump, load
-import torch
-import torchvision.transforms as transforms
-import torchvision
-from PIL import Image
-import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
+
 
 IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
 IMAGENET_STD 	= [0.229, 0.224, 0.225]
