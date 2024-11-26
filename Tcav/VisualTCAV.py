@@ -184,6 +184,9 @@ class VisualTCAV:
 			) for i, sorted_element in enumerate(sorted_arr) if i < 10
 		]
 
+	'''
+	feature_maps: Tensor [C,H,W]
+	'''
 	def _compute_integrated_gradients(self, feature_maps, layer_name, class_index):
 		feature_maps = feature_maps.detach().cpu()
 		# Generazione degli alphas per l'interpolazione
@@ -204,16 +207,30 @@ class VisualTCAV:
 		return avg_grads
 
 	# Utils function to interpolate the feature maps
+	'''
+	feature_maps: Tensor[C,H,W] or Tensor[Batch,C,H,W]
+	output: Tensor[Steps,C,H,W] or Tensors[Batch,Steps,C,H,W]
+	'''
 	def _interpolate_images(self, feature_maps, baseline, alphas):
+		if len(feature_maps.shape) == 3:
+			alphas_x = alphas.view(-1, 1, 1, 1)
+			baseline_x = baseline.unsqueeze(0)
+			input_x = feature_maps.unsqueeze(0)
 
-		alphas_x = alphas.view(-1, 1, 1, 1)
-		baseline_x = baseline.unsqueeze(0)
-		input_x = feature_maps.unsqueeze(0)
+			delta = input_x - baseline_x
+			interpolated_images = baseline_x + alphas_x * delta  # (steps, C, H, W)
 
-		delta = input_x - baseline_x
-		interpolated_images = baseline_x + alphas_x * delta  # (steps, C, H, W)
+			return interpolated_images
 
-		return interpolated_images
+		elif len(feature_maps.shape) == 4:
+			alphas_x = alphas.view(-1, 1, 1, 1, 1)
+			baseline_x = baseline.unsqueeze(0)
+			input_x = feature_maps.unsqueeze(0)
+
+			delta = input_x - baseline_x
+			interpolated_images = baseline_x + alphas_x * delta  # (steps, images, C, H, W)
+
+			return interpolated_images.interpolated_images.permute(1, 0, 2, 3, 4)
 
 
 	# Function to compute the negative examples activations for a given layer
