@@ -55,6 +55,12 @@ class ConceptLayer:
 		# CAV
 		self.cav = Cav()
 
+	def __str__(self):
+		print(self.cav)
+
+	def __repr__(self):
+		print(self.cav)
+
 
 #####
 # Cav class
@@ -70,6 +76,12 @@ class Cav:
 		self.centroid0 = centroid0
 		self.centroid1 = centroid1
 		self.concept_emblem = concept_emblem
+
+	def __str__(self):
+		print(f'|CAV|\tConcept Emblem: {self.concept_emblem}')
+
+	def __repr__(self):
+		print(f'|CAV|\tConcept Emblem: {self.concept_emblem}')
 
 
 #####

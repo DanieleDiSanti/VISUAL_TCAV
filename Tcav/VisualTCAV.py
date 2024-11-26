@@ -19,8 +19,8 @@ from joblib import dump, load
 import torchvision
 import torch
 import torch.nn.functional as F
-from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
 
+from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
 from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
 
 
@@ -43,8 +43,8 @@ preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=
 
 def get_model_by_name(model_name):
 	if model_name == 'RESNET50_V2':
-		model_graph_path = 'Models/RESNET50/Resnet50_V2.pth'
-		model_labels_path = 'Models/RESNET50/ResNet50V2-imagenet-classes.txt'
+		model_graph_path = 'Torch_VisualTCAV/Models/RESNET50/Resnet50_V2.pth'
+		model_labels_path = 'Torch_VisualTCAV/Models/RESNET50/ResNet50V2-imagenet-classes.txt'
 		return Model(model_name, model_graph_path, model_labels_path)
 
 
@@ -65,11 +65,11 @@ class VisualTCAV:
 	):
 		self.tcav_type = 'abstract'
 		# Folders and directories
-		self.models_dir = os.path.join(visual_tcav_dir, "Models") if not models_dir else models_dir
+		self.models_dir = os.path.join(visual_tcav_dir, "Torch_VisualTCAV/Models") if not models_dir else models_dir
 		self.cache_base_dir = os.path.join(visual_tcav_dir, "cache") if not cache_dir else cache_dir
 		self.cache_dir = self.cache_base_dir
 		self.test_images_dir = os.path.join(visual_tcav_dir, "test_images") if not test_images_dir else test_images_dir
-		self.concept_images_dir = os.path.join(visual_tcav_dir, "concept_images") if not concept_images_dir else concept_images_dir
+		self.concept_images_dir = os.path.join(visual_tcav_dir, "Torch_VisualTCAV/concept_images") if not concept_images_dir else concept_images_dir
 		self.random_images_folder = "random" if not random_images_folder else random_images_folder
 
 		os.makedirs(self.models_dir, exist_ok=True)
@@ -260,7 +260,6 @@ class VisualTCAV:
 	# Function to compute the CAV given a concept & a layer
 	def _compute_cavs(self, cache, concept_name, layer_name, random_acts):
 
-		#---TO TEST---
 		# Define cache path
 		cache_path = os.path.join(self.cache_dir, f'cav_{concept_name}_{self.model.max_examples}_{self.random_images_folder}_{layer_name}.joblib')
 
@@ -282,6 +281,10 @@ class VisualTCAV:
 			concept_layer.cav.centroid0 = pooled_concept.mean(dim=0)
 			concept_layer.cav.centroid1 = pooled_random.mean(dim=0)
 			concept_layer.cav.direction = concept_layer.cav.centroid0 - concept_layer.cav.centroid1
+
+			concept_layer.cav.centroid0 = concept_layer.cav.centroid0.detach().cpu()
+			concept_layer.cav.centroid1 = concept_layer.cav.centroid1.detach().cpu()
+			concept_layer.cav.direction = concept_layer.cav.direction.detach().cpu()
 
 			# Emblems computation
 			emblems = contraharmonic_mean(
