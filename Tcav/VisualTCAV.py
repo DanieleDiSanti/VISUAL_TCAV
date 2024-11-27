@@ -65,12 +65,12 @@ class VisualTCAV:
 	):
 		self.tcav_type = 'abstract'
 		# Folders and directories
-		self.models_dir = os.path.join(visual_tcav_dir, "Torch_VisualTCAV/Models") if not models_dir else models_dir
+		self.models_dir = os.path.join(visual_tcav_dir, "Models") if not models_dir else models_dir
 		self.cache_base_dir = os.path.join(visual_tcav_dir, "cache") if not cache_dir else cache_dir
 		self.cache_dir = self.cache_base_dir
 		self.test_images_dir = os.path.join(visual_tcav_dir, "test_images") if not test_images_dir else test_images_dir
-		self.concept_images_dir = os.path.join(visual_tcav_dir, "Torch_VisualTCAV/concept_images") if not concept_images_dir else concept_images_dir
-		self.random_images_folder = "random" if not random_images_folder else random_images_folder
+		self.concept_images_dir = os.path.join(visual_tcav_dir, "concept_images") if not concept_images_dir else concept_images_dir
+		self.random_images_folder = "concept_images/random" if not random_images_folder else random_images_folder
 
 		os.makedirs(self.models_dir, exist_ok=True)
 		os.makedirs(self.cache_base_dir, exist_ok=True)
@@ -258,7 +258,10 @@ class VisualTCAV:
 		return feature_maps_for_concept
 
 	# Function to compute the CAV given a concept & a layer
-	def _compute_cavs(self, cache, concept_name, layer_name, random_acts):
+	def _compute_cavs(self, cache, concept_name, layer_name, random_acts=None):
+
+		if random_acts is None:
+			random_acts = self._compute_random_activations(cache, layer_name)
 
 		# Define cache path
 		cache_path = os.path.join(self.cache_dir, f'cav_{concept_name}_{self.model.max_examples}_{self.random_images_folder}_{layer_name}.joblib')

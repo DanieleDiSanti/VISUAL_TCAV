@@ -1,23 +1,17 @@
-# Do not generate "__pycache__" folder
 import sys
-sys.dont_write_bytecode = True
-
 import os
 import numpy as np
-from joblib import dump, load
-import PIL.Image, PIL.ImageFilter
-from tqdm import tqdm
-from multiprocessing import dummy as multiprocessing
+import torchvision
 from prettytable import PrettyTable
-
-from sklearn.svm import LinearSVC
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from scipy import stats
-from sklearn.metrics import accuracy_score
-
 from matplotlib import pyplot as plt, cm as cm
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
+from tqdm import tqdm
+
+from Tcav.VisualTCAV import VisualTCAV
+
+sys.dont_write_bytecode = True
+
 
 # Tensorflow
 # 0 = all messages are logged (default behavior)
@@ -25,23 +19,6 @@ import seaborn as sns
 # 2 = INFO and WARNING messages are not printed
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
-import tensorflow as tf
-#import tensorflow_probability as tfp
-
-import pyTorch as torch
-import os
-import torch
-import torch.nn.functional as F
-from joblib import dump, load
-import torch
-import torchvision.transforms as transforms
-from PIL import Image
-import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
 
 IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
 IMAGENET_STD 	= [0.229, 0.224, 0.225]
@@ -57,7 +34,7 @@ class GlobalVisualTCAV(VisualTCAV):
 	##### Init #####
 	def __init__(
 		self,
-		target_class, test_images_folder, m_steps=50, compute_negative_class = False,
+		target_class, test_images_folder, m_steps=50, compute_negative_class=False,
 		*args, **kwargs
 	):
 
@@ -80,7 +57,7 @@ class GlobalVisualTCAV(VisualTCAV):
 
 	##### Explain #####
 	def explain(self, cache_cav=True, cache_random=True):
-		#----TO DO----
+		#----TODO----
 		# Checks
 		if not self.model:
 			raise Exception("Instantiate a Model first")
