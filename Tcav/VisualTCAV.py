@@ -48,6 +48,16 @@ def get_model_by_name(model_name):
 		return Model(model_name, model_graph_path, model_labels_path)
 
 
+def get_dtd():
+	return torchvision.datasets.DTD(
+		root='dtd',
+		split='train',
+		partition=1,
+		transform=None,
+		target_transform=None,
+		download=True
+	)
+
 #####
 # VisualTCAV class
 #####

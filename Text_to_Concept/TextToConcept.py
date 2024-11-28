@@ -89,7 +89,6 @@ class TextToConcept:
     def save_linear_aligner(self, path_to_save):
         self.linear_aligner.save_W(path_to_save)
 
-
     def train_linear_aligner(self, D, save_reps=False, load_reps=False, path_to_model=None, path_to_clip_model=None, epochs=5):
         if load_reps:
             self.load_reps(path_to_model, path_to_clip_model)
@@ -103,6 +102,22 @@ class TextToConcept:
 
         self.linear_aligner = LinearAligner()
         self.linear_aligner.train(self.reps_model, self.reps_clip, epochs=epochs, target_variance=4.5,)
+
+    # Initialize and Train the Linear Aligner from CLIP representations to Model representations
+    def train_linear_aligner_CLIP_to_Model(self, D, save_reps=False, load_reps=False, path_to_model=None,
+                                           path_to_clip_model=None, epochs=5):
+        if load_reps:
+            self.load_reps(path_to_model, path_to_clip_model)
+        else:
+            print(f'Obtaining representations ...')
+            self.reps_model = self.obtain_ftrs(self.model, D)
+            self.reps_clip = self.obtain_ftrs(self.clip_model, D)
+
+        if save_reps:
+            self.save_reps(path_to_model, path_to_clip_model)
+
+            self.linear_aligner = LinearAligner()
+        self.linear_aligner.train(self.reps_clip, self.reps_model, epochs=epochs, target_variance=4.5, )
 
 
     def get_zeroshot_weights(self, classes, prompts):
