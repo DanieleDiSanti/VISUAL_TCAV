@@ -265,7 +265,7 @@ class VisualTCAV:
 			'random',
 			layer_name,
 		)
-		return feature_maps_for_concept
+		return feature_maps_for_concept.detach().cpu()
 
 	# Function to compute the CAV given a concept & a layer
 	def _compute_cavs(self, cache, concept_name, layer_name, random_acts=None):
@@ -281,7 +281,7 @@ class VisualTCAV:
 			concept_layer = load(cache_path)
 		else:
 			# Activations (concept/layer)
-			concept_acts = self.model.activation_generator.get_feature_maps_for_concept(concept_name, layer_name)
+			concept_acts = self.model.activation_generator.get_feature_maps_for_concept(concept_name, layer_name).detach().cpu()
 
 			# Pooling the concept and random activations along spatial dimensions
 			pooled_concept = concept_acts.mean(dim=(1, 2))
