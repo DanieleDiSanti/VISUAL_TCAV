@@ -56,10 +56,10 @@ class ConceptLayer:
 		self.cav = Cav()
 
 	def __str__(self):
-		return self.cav
+		return self.cav.__str__()
 
 	def __repr__(self):
-		return self.cav
+		return self.cav.__repr__()
 
 
 #####
