@@ -288,8 +288,8 @@ class VisualTCAV:
 			concept_acts = self.model.activation_generator.get_feature_maps_for_concept(concept_name, layer_name).detach().cpu()
 
 			# Pooling the concept and random activations along spatial dimensions
-			pooled_concept = concept_acts.mean(dim=(1, 2))
-			pooled_random = random_acts.mean(dim=(1, 2))
+			pooled_concept = concept_acts.mean(dim=(2, 3))
+			pooled_random = random_acts.mean(dim=(2, 3))
 
 			# Initialize ConceptLayer
 			concept_layer = ConceptLayer()
@@ -324,7 +324,7 @@ class VisualTCAV:
 				torch.quantile(negative_emblems, 0.5)
 			], dtype=torch.float32)
 
-			print(concept_layer.cav.concept_emblem)
+			#print(concept_layer.cav.concept_emblem)
 
 			# Cache the computed concept layer if requested
 			if cache:

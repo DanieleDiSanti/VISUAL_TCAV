@@ -360,8 +360,8 @@ class ImageActivationGenerator:
     def _get_DataLoader(self, image_folder, batch_size=30, shuffle=False):
         n_imgs = len(image_folder)
         if n_imgs % batch_size != 0:
-            print('WARNING: batch_size does not match the number of images!')
+            #print('WARNING: batch_size does not match the number of images!')
             while n_imgs % batch_size != 0:
                 batch_size -= 1
-            print(f'New batch_size: {batch_size}')
+            #print(f'New batch_size: {batch_size}')
         return DataLoader(image_folder, batch_size=batch_size, shuffle=shuffle)
