@@ -40,6 +40,8 @@ preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 #preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
 
+MODEL_NAMES = ['RESNET50_V2']
+CONCEPTS = ['random', 'zigzagged']
 
 def get_model_by_name(model_name):
 	if model_name == 'RESNET50_V2':
@@ -71,7 +73,7 @@ class VisualTCAV:
 		visual_tcav_dir="Torch_VisualTCAV",
 		clear_cache=False,
 		batch_size=250,
-		models_dir=None, cache_dir=None, test_images_dir=None, concept_images_dir=None, random_images_folder=None
+		models_dir=None, cache_dir=None, test_images_dir=None, concept_images_dir=None
 	):
 		self.tcav_type = 'abstract'
 		# Folders and directories
@@ -80,7 +82,6 @@ class VisualTCAV:
 		self.cache_dir = self.cache_base_dir
 		self.test_images_dir = os.path.join(visual_tcav_dir, "test_images") if not test_images_dir else test_images_dir
 		self.concept_images_dir = os.path.join(visual_tcav_dir, "concept_images") if not concept_images_dir else concept_images_dir
-		self.random_images_folder = "concept_images/random" if not random_images_folder else random_images_folder
 
 		os.makedirs(self.models_dir, exist_ok=True)
 		os.makedirs(self.cache_base_dir, exist_ok=True)
@@ -106,6 +107,8 @@ class VisualTCAV:
 		# Computations
 		self.computations = {}
 		self.random_acts = {}
+
+		self.set_concepts(CONCEPTS)
 
 	# Set a list of concepts
 	def set_concepts(self, concept_names):
