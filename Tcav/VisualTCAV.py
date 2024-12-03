@@ -306,14 +306,14 @@ class VisualTCAV:
 			# Emblems computation
 			emblems = contraharmonic_mean(
 				F.relu(
-					(concept_layer.cav.direction[None, None, None, :] * concept_acts).sum(dim=3)
+					(concept_layer.cav.direction[None, :, None, None] * concept_acts).sum(dim=1)
 				),
 				axis=(1, 2)
 			)
 
 			negative_emblems = contraharmonic_mean(
 				F.relu(
-					(concept_layer.cav.direction[None, None, None, :] * random_acts).sum(dim=3)
+					(concept_layer.cav.direction[None, :, None, None] * random_acts).sum(dim=1)
 				),
 				axis=(1, 2)
 			)
