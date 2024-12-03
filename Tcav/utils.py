@@ -56,10 +56,10 @@ class ConceptLayer:
 		self.cav = Cav()
 
 	def __str__(self):
-		print(self.cav)
+		return self.cav
 
 	def __repr__(self):
-		print(self.cav)
+		return self.cav
 
 
 #####
@@ -78,10 +78,10 @@ class Cav:
 		self.concept_emblem = concept_emblem
 
 	def __str__(self):
-		print(f'|CAV|\tConcept Emblem: {self.concept_emblem}')
+		return f'|CAV|\tConcept Emblem: {self.concept_emblem}'
 
 	def __repr__(self):
-		print(f'|CAV|\tConcept Emblem: {self.concept_emblem}')
+		return f'|CAV|\tConcept Emblem: {self.concept_emblem}'
 
 
 #####

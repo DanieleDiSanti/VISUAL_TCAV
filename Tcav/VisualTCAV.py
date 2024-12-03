@@ -82,6 +82,7 @@ class VisualTCAV:
 		self.cache_dir = self.cache_base_dir
 		self.test_images_dir = os.path.join(visual_tcav_dir, "test_images") if not test_images_dir else test_images_dir
 		self.concept_images_dir = os.path.join(visual_tcav_dir, "concept_images") if not concept_images_dir else concept_images_dir
+		self.random_images_folder = 'random'
 
 		os.makedirs(self.models_dir, exist_ok=True)
 		os.makedirs(self.cache_base_dir, exist_ok=True)
