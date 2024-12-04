@@ -99,10 +99,10 @@ class Prediction:
 		self.confidence = confidence
 
 	def __str__(self):
-		print(f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}')
+		return f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}'
 
 	def __repr__(self):
-		print(f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}')
+		return f'Class Name: {self.class_name} Class Index: {self.class_index} Confidence: {self.confidence:.2f}'
 
 #####
 # Predictions class

@@ -82,8 +82,9 @@ class LocalVisualTCAV(VisualTCAV):
         tensor_transform = transforms.ToTensor()
 
         resized_img = resize_transform(img)
+        resized_img = tensor_transform(resized_img)
         self.img = resized_img.permute(1, 2, 0)
-        self.resized_img = tensor_transform(resized_img).unsqueeze(0)
+        self.resized_img = resized_img.unsqueeze(0)
 
         ''' Forse per  GlobalTCAV
         self.resized_imgs_size = self.model.model_wrapper.get_image_shape()[:2]
