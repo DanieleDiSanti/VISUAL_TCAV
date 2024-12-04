@@ -128,7 +128,7 @@ class Predictions:
 				self.predictions[0][i].class_name,
 				f"{self.predictions[0][i].confidence:.2g}"
 			])
-		print(table)
+		return table
 
 	def __str__(self):
 		self.info()

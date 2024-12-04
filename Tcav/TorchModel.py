@@ -121,10 +121,12 @@ class FeatureMapsModel(nn.Module):
 
 
 # From Feature Maps of a selected Layer to Logits
-# LayerName must be the next Layer from where the fmap come
+# LayerName must be the same Layer from where the fmap come
 class LogitsModel(nn.Module):
     def __init__(self, model, layer_name):
         super(LogitsModel, self).__init__()
+        layer_index = RESNET_LAYERS.index(layer_name)
+        layer_name = RESNET_LAYERS[layer_index + 1]
         self.model = model
         self.layer_name = layer_name
         self.avg_layer = [i for i in model.modules()][-2]

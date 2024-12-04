@@ -147,8 +147,8 @@ class LocalVisualTCAV(VisualTCAV):
                 attributions = {}
                 for n_class in range(self.n_classes):
                     if not self.model.binary_classification:
-                        logits = self.model.model_wrapper.get_logits(feature_maps.unsqueeze(0), layer_name)[0]
-                        logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps).unsqueeze(0), layer_name)[0]
+                        logits = self.model.model_wrapper.get_logits(feature_maps, layer_name)[0]
+                        logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps), layer_name)[0]
 
                         ig_expected = F.relu(logits - logits_baseline)
 
