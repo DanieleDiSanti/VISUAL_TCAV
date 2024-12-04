@@ -126,7 +126,7 @@ class LocalVisualTCAV(VisualTCAV):
                 if not cav_only:
                     # Concept map
                     concept_layer.concept_map = F.relu(
-                        torch.sum(concept_layer.cav.direction[None, None, :] * feature_maps, dim=2)
+                        torch.sum(concept_layer.cav.direction[:, None, None] * feature_maps, dim=0)
                     )
 
                     # Normalize Concept Map
@@ -194,8 +194,7 @@ class LocalVisualTCAV(VisualTCAV):
                     for n_class in range(self.n_classes):
 
                         # Mask attributions
-                        masked_attributions = attributions[n_class] * self.computations[layer_name][
-                                                                          concept_name].concept_map[:, :, None]
+                        masked_attributions = attributions[n_class] * self.computations[layer_name][concept_name].concept_map[:, :, None]
                         pooled_masked_attributions = masked_attributions.sum(dim=(0, 1))
 
                         # Pooled & normalized CAV
