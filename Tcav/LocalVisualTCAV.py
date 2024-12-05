@@ -71,12 +71,27 @@ class LocalVisualTCAV(VisualTCAV):
         else:
             self.n_classes = 2  # add check that it's actually binary
 
-        test_images_path = os.path.join(self.test_images_dir, self.test_image_filename)
         self.resized_imgs_size = self.model.model_wrapper.get_image_shape()[:2]
 
         self.predictions = []
         self.computations = {}
 
+        self.img = None
+        self.resized_img = None
+        self.imgs = None
+        self.resized_imgs = None
+        self.set_test_image(self.test_image_filename)
+
+        ''' Forse per  GlobalTCAV
+        self.resized_imgs_size = self.model.model_wrapper.get_image_shape()[:2]
+        self.test_images_dir = 'Torch_VisualTCAV/test_images'
+        self.resized_imgs = self.model.activation_generator._load_ImageFolder(self.test_images_dir, shape=self.resized_imgs_size)
+        self.resized_imgs = self.model.activation_generator._get_DataLoader(self.resized_imgs)
+        '''
+
+    def set_test_image(self, test_image_filename):
+        self.test_image_filename = test_image_filename
+        test_images_path = os.path.join(self.test_images_dir, test_image_filename)
         img = Image.open(test_images_path).convert('RGB')  # Carica e converte in RGB
         resize_transform = transforms.Resize(self.resized_imgs_size, interpolation=Image.BILINEAR)
         tensor_transform = transforms.ToTensor()
@@ -85,13 +100,8 @@ class LocalVisualTCAV(VisualTCAV):
         resized_img = tensor_transform(resized_img)
         self.img = resized_img.permute(1, 2, 0)
         self.resized_img = resized_img.unsqueeze(0)
-
-        ''' Forse per  GlobalTCAV
-        self.resized_imgs_size = self.model.model_wrapper.get_image_shape()[:2]
-        self.test_images_dir = 'Torch_VisualTCAV/test_images'
-        self.resized_imgs = self.model.activation_generator._load_ImageFolder(self.test_images_dir, shape=self.resized_imgs_size)
-        self.resized_imgs = self.model.activation_generator._get_DataLoader(self.resized_imgs)
-        '''
+        self.imgs = self.img
+        self.resized_imgs = self.resized_img
 
     def explain(self, cache_cav=True, cache_random=True, cav_only=False):
         # ----TO TEST----
@@ -107,19 +117,23 @@ class LocalVisualTCAV(VisualTCAV):
         self.computations = {}
 
         # For each layer
-        for layer_name in tqdm(self.layers, desc="Layers", position=0):
+        for layer_name in self.layers:
+            print(f'{layer_name}:', end='\n')
             self.computations[layer_name] = {}
 
             # Random activations
+            print('Compute Random Fmaps', end='--')
             random_acts = self._compute_random_activations(cache_random, layer_name)
 
             # Compute the feature maps
+            print('Compute Test Image Fmaps', end='--')
             feature_maps = self.model.model_wrapper.get_feature_maps(
                 self.model.preprocessing_function(self.resized_img),
                 layer_name
             ).detach().cpu()[0]
 
             # Compute the CAVs
+            print('Compute CAVs', end='--')
             for concept_name in self.concepts:
                 # CAVs
                 concept_layer = self._compute_cavs(cache_cav, concept_name, layer_name, random_acts)
@@ -144,11 +158,12 @@ class LocalVisualTCAV(VisualTCAV):
 
             if not cav_only:
                 # Compute integrated gradients and attributions
+                print('Compute IG', end='--')
                 attributions = {}
                 for n_class in range(self.n_classes):
                     if not self.model.binary_classification:
-                        logits = self.model.model_wrapper.get_logits(feature_maps, layer_name)[0]
-                        logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps), layer_name)[0]
+                        logits = self.model.model_wrapper.get_logits(feature_maps, layer_name).detach().cpu()[0]
+                        logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps), layer_name).detach().cpu()[0]
 
                         ig_expected = F.relu(logits - logits_baseline)
 
@@ -191,19 +206,20 @@ class LocalVisualTCAV(VisualTCAV):
                         attributions[n_class] = attributions[n_class]*(ig_expected_class/(attributions[n_class].sum()+1e-10))
 
                 # Iterate again on concepts and n_classes
+                print('Create Masks', end='\n')
                 for concept_name in self.concepts:
                     for n_class in range(self.n_classes):
 
                         # Mask attributions
-                        masked_attributions = attributions[n_class] * self.computations[layer_name][concept_name].concept_map[:, :, None]
-                        pooled_masked_attributions = masked_attributions.sum(dim=(0, 1))
+                        masked_attributions = attributions[n_class] * self.computations[layer_name][concept_name].concept_map[None,:, :]
+                        pooled_masked_attributions = masked_attributions.sum(dim=(1, 2))
 
                         # Pooled & normalized CAV
                         if feature_maps.min() < 0:
                             pooled_cav_norm = F.relu(
                                 self.computations[layer_name][concept_name].cav.direction *
                                 torch.where((feature_maps * self.computations[layer_name][concept_name].
-                                             concept_map[:, :, None]).sum(dim=(0, 1)) < 0, -1.0, 1.0)
+                                             concept_map[None, :, :]).sum(dim=(0, 1)) < 0, -1.0, 1.0)
                             )
                         else:
                             pooled_cav_norm = F.relu(self.computations[layer_name][concept_name].cav.direction)
@@ -217,7 +233,7 @@ class LocalVisualTCAV(VisualTCAV):
 
     ##### Plot heatmaps and information #####
     def plot(self, paper=False):
-        # ----TO TEST----
+        path = '/content/VISUAL_TCAV/Tcav/Torch_VisualTCAV/concept_images/'
         # Checks
         if not self.model:
             raise Exception("Instantiate a Model first")
@@ -249,10 +265,15 @@ class LocalVisualTCAV(VisualTCAV):
 
             # Examples of concepts
             if not paper:
-                concept_images = self.model.activation_generator.get_images_for_concept(concept_name, False)
+                concept_images = self.model.activation_generator._get_images_for_concept(
+                    concept=concept_name,
+                    preprocess=False,
+                    format_DataLoader=False
+                )
                 for i in range(min(len(concept_images), len(self.layers) * 3)):
+                    img = concept_images[i][0].permute(1, 2, 0)
                     fig.add_subplot(gs[2, i])
-                    plt.imshow(concept_images[i])
+                    plt.imshow(img)
                     plt.tight_layout()
                     plt.axis('off')
 
@@ -267,7 +288,7 @@ class LocalVisualTCAV(VisualTCAV):
                 concept_layer = self.computations[layer_name][concept_name]
 
                 # Ottieni la mappa del concetto e calcola il massimo valore
-                max_value = torch.max(concept_layer.concept_map)
+                max_value = torch.max(concept_layer.concept_map).detach().cpu().numpy()
 
                 # Ridimensiona la mappa per ottenere la heatmap
                 heatmap = F.interpolate(
@@ -285,7 +306,8 @@ class LocalVisualTCAV(VisualTCAV):
                 plt.imshow(self.img)
 
                 # Blurring
-                heatmap = np.array(PIL.Image.fromarray(np.uint8(heatmap * 255), 'L').filter(PIL.ImageFilter.GaussianBlur(radius=21))) / 255
+                heatmap = np.array(PIL.Image.fromarray(np.uint8(heatmap * 255), 'L').filter(
+                    PIL.ImageFilter.GaussianBlur(radius=21))) / 255
 
                 if np.max(heatmap):
                     heatmap = (heatmap / np.max(heatmap)) * max_value
@@ -317,7 +339,7 @@ class LocalVisualTCAV(VisualTCAV):
                     row.append(f"$\mathit{{{class_name}}}$")
                     if paper:
                         attribution = f"{attribution:.2g}" if (
-                                    attribution >= 0.001 or attribution == 0.0) else f"{attribution:.1e}"
+                                attribution >= 0.001 or attribution == 0.0) else f"{attribution:.1e}"
                     else:
                         attribution = f"{attribution:.2g}" if attribution >= 0.001 else f"{attribution:.1e}"
                     attribution = attribution.replace("e-0", "e-").replace('-', '{-}')
@@ -358,7 +380,6 @@ class LocalVisualTCAV(VisualTCAV):
             # Show
             fig.tight_layout()
             plt.show()
-
     ##### Get CAVs #####
     def getCAVs(self, layer_name, concept_name):
 

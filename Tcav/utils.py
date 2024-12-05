@@ -130,6 +130,9 @@ class Predictions:
 			])
 		return table
 
+	def __getitem__(self, item):
+		return self.predictions[item]
+
 	def __str__(self):
 		self.info()
 

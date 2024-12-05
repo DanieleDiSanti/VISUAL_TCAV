@@ -47,7 +47,12 @@ def get_model_by_name(model_name):
 	if model_name == 'RESNET50_V2':
 		model_graph_path = 'Torch_VisualTCAV/Models/RESNET50/Resnet50_V2.pth'
 		model_labels_path = 'Torch_VisualTCAV/Models/RESNET50/ResNet50V2-imagenet-classes.txt'
-		return Model(model_name, model_graph_path, model_labels_path)
+		return Model(
+			model_name=model_name,
+			graph_path_filename=model_graph_path,
+			label_path_filename=model_labels_path,
+			preprocessing_function=preprocess_resnet_v2
+		)
 
 
 def get_dtd():

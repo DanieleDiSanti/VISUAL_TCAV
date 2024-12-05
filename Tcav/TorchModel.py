@@ -336,10 +336,14 @@ class ImageActivationGenerator:
         # Return the feature maps
         return feature_maps
 
-    def _get_images_for_concept(self, concept, preprocess=True, batch_size=30):
+    def _get_images_for_concept(self, concept, preprocess=True, batch_size=30, format_DataLoader = True):
         concept_folder = os.path.join(self.concept_images_dir, concept)
         img_folder = self._load_ImageFolder(concept_folder, preprocess=preprocess)
-        return self._get_DataLoader(img_folder, batch_size)
+
+        if format_DataLoader:
+            return self._get_DataLoader(img_folder, batch_size)
+        else:
+            return img_folder
 
     def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
         if self.preprocessing_function is not None and preprocess:
