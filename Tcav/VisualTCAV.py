@@ -134,7 +134,7 @@ class VisualTCAV:
 	def predict(self, no_sort=False):
 
 		# Checks
-		if not self.tcav_type == 'local':
+		if not self.tcav_type != 'abstract':
 			raise Exception("Please use a local explainer")
 		if not self.model:
 			raise Exception("Please instantiate a Model first")

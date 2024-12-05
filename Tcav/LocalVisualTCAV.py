@@ -104,7 +104,6 @@ class LocalVisualTCAV(VisualTCAV):
         self.resized_imgs = self.resized_img
 
     def explain(self, cache_cav=True, cache_random=True, cav_only=False):
-        # ----TO TEST----
         # Checks
         if not self.model:
             raise Exception("Instantiate a Model first")
@@ -118,7 +117,7 @@ class LocalVisualTCAV(VisualTCAV):
 
         # For each layer
         for layer_name in self.layers:
-            print(f'{layer_name}:', end='\n')
+            print(f'\n{layer_name}:', end='\n')
             self.computations[layer_name] = {}
 
             # Random activations
