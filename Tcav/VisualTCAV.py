@@ -377,6 +377,7 @@ class VisualTCAV:
 
 	def load_cavs_directions(self, concepts, layers):
 		for layer in layers:
+			self.computations[layer] = {}
 			for concept in concepts:
 				cav_direction = self.load_cav(concept, layer)
 				concept_layer = ConceptLayer()

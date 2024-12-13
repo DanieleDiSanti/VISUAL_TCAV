@@ -121,15 +121,17 @@ class LocalVisualTCAV(VisualTCAV):
             self.computations[layer_name] = {}
 
             # Random activations
-            print('Compute Random Fmaps', end='--')
-            random_acts = self._compute_random_activations(cache_random, layer_name)
+            if not pre_load_cav:
+                print('Compute Random Fmaps', end='--')
+                random_acts = self._compute_random_activations(cache_random, layer_name)
 
             # Compute the feature maps
-            print('Compute Test Image Fmaps', end='--')
-            feature_maps = self.model.model_wrapper.get_feature_maps(
-                self.model.preprocessing_function(self.resized_img),
-                layer_name
-            ).detach().cpu()[0]
+            if not pre_load_cav:
+                print('Compute Test Image Fmaps', end='--')
+                feature_maps = self.model.model_wrapper.get_feature_maps(
+                    self.model.preprocessing_function(self.resized_img),
+                    layer_name
+                ).detach().cpu()[0]
 
             # Compute the CAVs
             print('Compute CAVs', end='--')
