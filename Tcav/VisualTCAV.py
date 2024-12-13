@@ -368,9 +368,23 @@ class VisualTCAV:
 			return torch.from_numpy(cav)
 
 		elif concept is not None and layer is not None:
-			path = f'CAV_{concept}_{layer}_{model_name}.npy'
+			filename = f'CAV_{concept}_{layer}_{model_name}.npy'
+			path = f'Torch_VisualTCAV/Models/{model_name}/{filename}'
 			cav = np.load(path)
 			return torch.from_numpy(cav)
 
 		raise Exception('File not Found!')
+
+	def load_cavs_directions(self, concepts, layers):
+		for layer in layers:
+			for concept in concepts:
+				cav_direction = self.load_cav(concept, layer)
+				concept_layer = ConceptLayer()
+
+				# Calculate centroids
+				concept_layer.cav.centroid0 = None
+				concept_layer.cav.centroid1 = None
+				concept_layer.cav.direction = cav_direction
+
+				self.computations[layer][concept] = concept_layer
 

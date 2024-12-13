@@ -103,7 +103,7 @@ class LocalVisualTCAV(VisualTCAV):
         self.imgs = self.img
         self.resized_imgs = self.resized_img
 
-    def explain(self, cache_cav=True, cache_random=True, cav_only=False):
+    def explain(self, cache_cav=True, cache_random=True, cav_only=False, pre_load_cav=False):
         # Checks
         if not self.model:
             raise Exception("Instantiate a Model first")
@@ -135,7 +135,10 @@ class LocalVisualTCAV(VisualTCAV):
             print('Compute CAVs', end='--')
             for concept_name in self.concepts:
                 # CAVs
-                concept_layer = self._compute_cavs(cache_cav, concept_name, layer_name, random_acts)
+                if pre_load_cav:
+                    concept_layer = self.computations[layer_name][concept_name]
+                else:
+                    concept_layer = self._compute_cavs(cache_cav, concept_name, layer_name, random_acts)
 
                 if not cav_only:
                     # Concept map
