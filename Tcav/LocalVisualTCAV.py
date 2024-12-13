@@ -150,13 +150,14 @@ class LocalVisualTCAV(VisualTCAV):
                     )
 
                     # Normalize Concept Map
-                    emblem_max, emblem_min = concept_layer.cav.concept_emblem
-                    if emblem_max > emblem_min:
-                        concept_layer.concept_map = torch.clamp(concept_layer.concept_map, min=emblem_min,
-                                                                max=emblem_max)
-                        concept_layer.concept_map = (concept_layer.concept_map - emblem_min) / (emblem_max - emblem_min)
-                    else:
-                        concept_layer.concept_map = concept_layer.concept_map * 0
+                    if not pre_load_cav:
+                        emblem_max, emblem_min = concept_layer.cav.concept_emblem
+                        if emblem_max > emblem_min:
+                            concept_layer.concept_map = torch.clamp(concept_layer.concept_map, min=emblem_min,
+                                                                    max=emblem_max)
+                            concept_layer.concept_map = (concept_layer.concept_map - emblem_min) / (emblem_max - emblem_min)
+                        else:
+                            concept_layer.concept_map = concept_layer.concept_map * 0
 
                 # Save the partial computations
                 self.computations[layer_name][concept_name] = concept_layer
