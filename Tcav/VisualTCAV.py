@@ -148,8 +148,7 @@ class VisualTCAV:
 			raise Exception("Please instantiate a Model first")
 
 		# Predict with the provided model wrapper
-		data = self.model.preprocessing_function(self.resized_img)
-		self.predictions = self.model.model_wrapper.get_predictions(data)
+		self.predictions = self.model.model_wrapper.get_predictions(self.resized_imgs)
 
 		# Sort & add class names
 		self.predictions = np.array([
