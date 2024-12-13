@@ -345,3 +345,32 @@ class VisualTCAV:
 
 		# Return the computed concept layer
 		return concept_layer
+
+	def save_cav(self, concept, layer_name):
+		print('Computing CAV...')
+		concept_layer = self._compute_cavs(cache=True, concept_name=concept, layer_name=layer_name)
+		cav_vector = np.array(concept_layer.cav.direction)
+
+		print('Saving CAV...')
+		model_name = self.model.model_name
+		filename = f'CAV_{concept}_{layer_name}_{model_name}.npy'
+		path = f'Torch_VisualTCAV/Models/{model_name}/{filename}'
+		np.save(path, cav_vector)
+		print(f'CAV {concept}-{layer_name} Saved!')
+
+	def load_cav(self, concept=None, layer=None, model_name=None, filename=None):
+		if model_name is None:
+			model_name = self.model.model_name
+
+		if filename is not None:
+			path = f'Torch_VisualTCAV/Models/{model_name}/{filename}'
+			cav = np.load(path)
+			return torch.from_numpy(cav)
+
+		elif concept is not None and layer is not None:
+			path = f'CAV_{concept}_{layer}_{model_name}.npy'
+			cav = np.load(path)
+			return torch.from_numpy(cav)
+
+		raise Exception('File not Found!')
+
