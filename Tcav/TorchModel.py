@@ -7,6 +7,7 @@ from joblib import dump, load
 from torchvision import datasets, transforms
 import os
 import torch.nn as nn
+import torchvision
 
 # Do not generate "__pycache__" folder
 sys.dont_write_bytecode = True
@@ -21,8 +22,12 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
+#model = torchvision.models.resnet50(weights="IMAGENET1K_V2")
+#weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
+#preprocess = weights.transforms()
+
 # Keras preprocessing functions
-preprocess_resnet_v2 = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transforms()
 # preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 # preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
 #####

@@ -36,17 +36,23 @@ IMAGENET_MEAN 	= [0.485, 0.456, 0.406]
 IMAGENET_STD 	= [0.229, 0.224, 0.225]
 
 # preprocessing functions
-preprocess_resnet_v2 = torchvision.transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transforms()
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 #preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
 
 MODEL_NAMES = ['RESNET50_V2']
 CONCEPTS = ['random', 'zigzagged']
 
-def get_model_by_name(model_name):
+
+def get_model_by_name(model_name, download=True):
 	if model_name == 'RESNET50_V2':
 		model_graph_path = 'Torch_VisualTCAV/Models/RESNET50/Resnet50_V2.pth'
 		model_labels_path = 'Torch_VisualTCAV/Models/RESNET50/ResNet50V2-imagenet-classes.txt'
+
+		if download:
+			model = torchvision.models.resnet50(weights="IMAGENET1K_V2")
+			torch.save(model, model_graph_path)
+
 		return Model(
 			model_name=model_name,
 			graph_path_filename=model_graph_path,
@@ -65,9 +71,11 @@ def get_dtd():
 		download=True
 	)
 
+
 #####
 # VisualTCAV class
 #####
+
 
 class VisualTCAV:
 
@@ -140,7 +148,8 @@ class VisualTCAV:
 			raise Exception("Please instantiate a Model first")
 
 		# Predict with the provided model wrapper
-		self.predictions = self.model.model_wrapper.get_predictions(self.resized_imgs)
+		data = self.model.preprocessing_function(self.resized_img)
+		self.predictions = self.model.model_wrapper.get_predictions(data)
 
 		# Sort & add class names
 		self.predictions = np.array([
