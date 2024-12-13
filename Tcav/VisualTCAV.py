@@ -46,8 +46,8 @@ CONCEPTS = ['random', 'zigzagged']
 
 def get_model_by_name(model_name, download=True):
 	if model_name == 'RESNET50_V2':
-		model_graph_path = 'Torch_VisualTCAV/Models/RESNET50/Resnet50_V2.pth'
-		model_labels_path = 'Torch_VisualTCAV/Models/RESNET50/ResNet50V2-imagenet-classes.txt'
+		model_graph_path = 'Resnet50_V2.pth'
+		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
 
 		if download:
 			model = torchvision.models.resnet50(weights="IMAGENET1K_V2")

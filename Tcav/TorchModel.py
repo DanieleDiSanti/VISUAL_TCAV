@@ -53,7 +53,7 @@ def set_batch_size(len_data, size=30):
 
 class Model:
     ##### Init #####
-    def __init__(self, model_name, graph_path_filename, label_path_filename, preprocessing_function=lambda x: x / 255,
+    def __init__(self, model_name, graph_path_filename, label_path_filename, preprocessing_function=lambda x: x,
                  binary_classification=False, max_examples=500, model_wrapper=None, activation_generator=None):
         # Attributes
         self.model_name = model_name
