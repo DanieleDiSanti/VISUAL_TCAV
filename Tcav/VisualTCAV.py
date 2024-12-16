@@ -45,6 +45,7 @@ CONCEPTS = ['random', 'zigzagged']
 
 
 def get_model_by_name(model_name, download=True):
+	models_dir = 'Torch_VisualTCAV/Models'
 	if model_name == 'RESNET50_V2':
 		model_graph_path = 'Resnet50_V2.pth'
 		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
@@ -52,23 +53,27 @@ def get_model_by_name(model_name, download=True):
 
 		if download:
 			model = torchvision.models.resnet50(weights="IMAGENET1K_V2")
-			torch.save(model, model_graph_path)
+			path = f'{models_dir}/{model_name}/{model_graph_path}'
+			os.makedirs(f'{models_dir}/{model_name}', exist_ok=True)
+			torch.save(model, path)
 
-		if model_name == 'VGG_16':
-			model_graph_path = 'VGG_16.pth'
-			model_labels_path = 'ResNet50V2-imagenet-classes.txt'
-			preprocess_function = preprocess_vgg16
+	if model_name == 'VGG_16':
+		model_graph_path = 'VGG_16.pth'
+		model_labels_path = 'VGG16-imagenet-classes.txt'
+		preprocess_function = preprocess_vgg16
 
-			if download:
-				model = torchvision.models.vgg16(pretrained=True)
-				torch.save(model, model_graph_path)
+		if download:
+			model = torchvision.models.vgg16(pretrained=True)
+			path = f'{models_dir}/{model_name}/{model_graph_path}'
+			os.makedirs(f'{models_dir}/{model_name}', exist_ok=True)
+			torch.save(model, path)
 
-		return Model(
-			model_name=model_name,
-			graph_path_filename=model_graph_path,
-			label_path_filename=model_labels_path,
-			preprocessing_function=preprocess_function
-		)
+	return Model(
+		model_name=model_name,
+		graph_path_filename=model_graph_path,
+		label_path_filename=model_labels_path,
+		preprocessing_function=preprocess_function
+	)
 
 
 def get_dtd():

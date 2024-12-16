@@ -94,10 +94,13 @@ class LocalVisualTCAV(VisualTCAV):
         test_images_path = os.path.join(self.test_images_dir, test_image_filename)
         img = Image.open(test_images_path).convert('RGB')  # Carica e converte in RGB
         resize_transform = transforms.Resize(self.resized_imgs_size, interpolation=Image.BILINEAR)
+        center_transform = transforms.CenterCrop(224)
         tensor_transform = transforms.ToTensor()
 
         resized_img = resize_transform(img)
+        resized_img = center_transform(resized_img)
         resized_img = tensor_transform(resized_img)
+        resized_img = self.model.preprocessing_function(resized_img)
         self.img = resized_img.permute(1, 2, 0)
         self.resized_img = resized_img.unsqueeze(0)
         self.imgs = self.img
@@ -129,10 +132,7 @@ class LocalVisualTCAV(VisualTCAV):
 
             # Compute the feature maps
             print('Compute Test Image Fmaps', end='--')
-            feature_maps = self.model.model_wrapper.get_feature_maps(
-                self.model.preprocessing_function(self.resized_img),
-                layer_name
-            ).detach().cpu()[0]
+            feature_maps = self.model.model_wrapper.get_feature_maps(self.resized_img,layer_name).detach().cpu()[0]
 
             # Compute the CAVs
             print('Compute CAVs', end='--')
