@@ -44,6 +44,27 @@ RESNET_LAYERS_TENSORS = {
     'linear': (1, 2048)
 }
 
+VGG_LAYERS_INDEX = {
+    'conv1_1': 2,
+    'conv1_2': 4,
+    'maxpool1': 5,
+    'conv2_1': 7,
+    'conv2_2': 9,
+    'maxpool2': 10,
+    'conv3_1': 12,
+    'conv3_2': 14,
+    'conv3_3': 16,
+    'maxpool3':17,
+    'conv4_1': 19,
+    'conv4_2': 21,
+    'conv4_3': 23,
+    'maxpool4': 24,
+    'conv5_1': 26,
+    'conv5_2': 28,
+    'conv5_3': 30,
+    'maxpool5': 31
+}
+
 
 def set_batch_size(len_data, size=30):
     while len_data % size != 0:
@@ -91,11 +112,18 @@ class Model:
 
 # From Image Input to Feature Maps of a selected Layer
 class FeatureMapsModel(nn.Module):
-    def __init__(self, model, layer_name):
+    def __init__(self, model, layer_name, model_name=None):
         super(FeatureMapsModel, self).__init__()
         self.model = model
         self.layer_name = layer_name
-        self.layers = nn.Sequential(*list(model.children())[:self._get_layer_index() + 1])
+
+        if model_name == 'VGG_16':
+            index = VGG_LAYERS_INDEX[layer_name]
+            index_feature_extractor = 0
+            self.layers = [i for _, i in model.named_children()][index_feature_extractor][0:index]
+
+        else:
+            self.layers = nn.Sequential(*list(model.children())[:self._get_layer_index() + 1])
 
     def _get_layer_index(self):
         layer_names = [name for name, _ in self.model.named_children()]
@@ -158,6 +186,45 @@ class LogitsModel(nn.Module):
         return x
 
 
+class LogitsModel_VGG(nn.Module):
+    def __init__(self, model, layer_name):
+        super(LogitsModel_VGG, self).__init__()
+
+        self.model = model
+        self.layer_name = layer_name
+        index = VGG_LAYERS_INDEX[layer_name]
+        index_feature_extractor = 0
+        index_avg = 1
+        index_classifier = 2
+        features_extractor = [i for _, i in model.named_children()][index_feature_extractor][index:]
+        avg = [i for _, i in model.named_children()][index_avg]
+        classifier = [i for _, i in model.named_children()][index_classifier]
+        modules = []
+        modules.append(features_extractor)
+        features_extractor.append(avg)
+        modules.append(classifier)
+        self.layers = nn.Sequential(*modules)
+
+    def _get_layer_index(self):
+        """Trova l'indice del livello specificato nel modello."""
+        layer_names = [name for name, _ in self.model.named_children()]
+        if self.layer_name not in layer_names:
+            raise ValueError(f"Layer {self.layer_name} not found in the model.")
+        return layer_names.index(self.layer_name)
+
+    def forward(self, x):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to(device)
+        x = x.to(device)
+        self.model.eval()
+        x = self.layers[0](x)  # conv layers
+        if len(x.shape) == 3:
+            x = x.reshape(x.shape[0] * x.shape[1] * x.shape[2])  # flatten
+        else:
+            x = x.reshape(x.shape[0], x.shape[1] * x.shape[2] * x.shape[3])  # flatten
+        x = self.layers[1](x)  # classifier
+        return x
+
 class TorchModelWrapper:
     def __init__(self, model_path, labels_path, batch_size, model_name):
         # Model details
@@ -216,7 +283,7 @@ class TorchModelWrapper:
     ##### Get the feature maps given one or more input(s) #####
     def get_feature_maps(self, imgs, layer_name):
         if layer_name not in self.simulated_layer_model:
-            self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name)
+            self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name, self.model_name)
 
         feature_maps = self.simulated_layer_model[layer_name].forward(imgs)
         return feature_maps
@@ -225,9 +292,13 @@ class TorchModelWrapper:
     def get_logits(self, feature_maps, layer_name):
         if len(feature_maps.shape) == 3:
             feature_maps = feature_maps.unsqueeze(0)
+
         # Simulate a model with the logits (lazy)
         if layer_name not in self.simulated_logits_model:
-            self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name)
+            if self.model_name == 'VGG_16':
+                self.simulated_logits_model[layer_name] = LogitsModel_VGG(self.model, layer_name)
+            else:
+                self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name)
 
         # Feed the model with the inputs
         logits = self.simulated_logits_model[layer_name].forward(feature_maps)
@@ -354,6 +425,7 @@ class ImageActivationGenerator:
         if self.preprocessing_function is not None and preprocess:
             transform = transforms.Compose([
                 transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+                transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 self.preprocessing_function
             ])
@@ -361,6 +433,7 @@ class ImageActivationGenerator:
         else:
             transform = transforms.Compose([
                 transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
+                transforms.CenterCrop(224),
                 transforms.ToTensor()
             ])
 

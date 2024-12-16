@@ -38,7 +38,7 @@ IMAGENET_STD 	= [0.229, 0.224, 0.225]
 # preprocessing functions
 preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transforms()
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
-#preprocess_vgg16 = tf.keras.applications.vgg16.preprocess_input
+preprocess_vgg16 = torchvision.models.VGG16_Weights.IMAGENET1K_V1.transforms()
 
 MODEL_NAMES = ['RESNET50_V2']
 CONCEPTS = ['random', 'zigzagged']
@@ -48,16 +48,26 @@ def get_model_by_name(model_name, download=True):
 	if model_name == 'RESNET50_V2':
 		model_graph_path = 'Resnet50_V2.pth'
 		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
+		preprocess_function = preprocess_resnet_v2
 
 		if download:
 			model = torchvision.models.resnet50(weights="IMAGENET1K_V2")
 			torch.save(model, model_graph_path)
 
+		if model_name == 'VGG_16':
+			model_graph_path = 'VGG_16.pth'
+			model_labels_path = 'ResNet50V2-imagenet-classes.txt'
+			preprocess_function = preprocess_vgg16
+
+			if download:
+				model = torchvision.models.vgg16(pretrained=True)
+				torch.save(model, model_graph_path)
+
 		return Model(
 			model_name=model_name,
 			graph_path_filename=model_graph_path,
 			label_path_filename=model_labels_path,
-			preprocessing_function=preprocess_resnet_v2
+			preprocessing_function=preprocess_function
 		)
 
 
