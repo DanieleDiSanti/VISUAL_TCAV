@@ -282,10 +282,16 @@ class TorchModelWrapper:
 
     ##### Get the feature maps given one or more input(s) #####
     def get_feature_maps(self, imgs, layer_name):
+        f_model = FeatureMapsModel(self.model, layer_name, self.model_name)
+
+        '''
         if layer_name not in self.simulated_layer_model:
             self.simulated_layer_model[layer_name] = FeatureMapsModel(self.model, layer_name, self.model_name)
-
+        
         feature_maps = self.simulated_layer_model[layer_name].forward(imgs)
+        '''
+
+        feature_maps = f_model.forward(imgs)
         return feature_maps
 
     ##### Get the logits given a layer and one or more input(s) #####
@@ -293,15 +299,24 @@ class TorchModelWrapper:
         if len(feature_maps.shape) == 3:
             feature_maps = feature_maps.unsqueeze(0)
 
+
+        if self.model_name == 'VGG_16':
+            l_model = LogitsModel_VGG(self.model, layer_name)
+        else:
+            l_model = LogitsModel(self.model, layer_name)
+
+        '''
         # Simulate a model with the logits (lazy)
         if layer_name not in self.simulated_logits_model:
             if self.model_name == 'VGG_16':
                 self.simulated_logits_model[layer_name] = LogitsModel_VGG(self.model, layer_name)
             else:
                 self.simulated_logits_model[layer_name] = LogitsModel(self.model, layer_name)
+        '''
 
         # Feed the model with the inputs
-        logits = self.simulated_logits_model[layer_name].forward(feature_maps)
+        logits = l_model.forward(feature_maps)
+        #logits = self.simulated_logits_model[layer_name].forward(feature_maps)
 
         # Return the logits
         return logits
@@ -369,6 +384,7 @@ class ImageActivationGenerator:
         self.cache_dir = cache_dir
         self.max_examples = max_examples
         self.preprocessing_function = preprocessing_function
+        self.batch_size = 30
 
     def get_feature_maps_for_concept(self, concept, layer, imgs=None, preprocess=True, batch_size=30):
         if imgs is None:
@@ -441,7 +457,10 @@ class ImageActivationGenerator:
         x = datasets.ImageFolder(root=images_folder_path, transform=transform)
         return x
 
-    def _get_DataLoader(self, image_folder, batch_size=30, shuffle=False):
+    def _get_DataLoader(self, image_folder, batch_size=None, shuffle=False):
+        if batch_size is None:
+            batch_size = self.batch_size
+
         n_imgs = len(image_folder)
         if n_imgs % batch_size != 0:
             #print('WARNING: batch_size does not match the number of images!')
