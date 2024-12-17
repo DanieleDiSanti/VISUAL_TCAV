@@ -174,6 +174,8 @@ class VisualTCAV:
 			) for prediction in self.predictions
 		])
 
+		torch.cuda.empty_cache()
+
 		# Return the classes
 		return Predictions(self.predictions, self.test_image_filename, self.model.model_name)
 
@@ -359,6 +361,7 @@ class VisualTCAV:
 				dump(concept_layer, cache_path, compress=9)
 
 		# Return the computed concept layer
+		torch.cuda.empty_cache()
 		return concept_layer
 
 	def save_cav(self, concept, layer_name):

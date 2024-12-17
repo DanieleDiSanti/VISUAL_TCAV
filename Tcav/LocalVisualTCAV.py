@@ -100,9 +100,11 @@ class LocalVisualTCAV(VisualTCAV):
         resized_img = resize_transform(img)
         resized_img = center_transform(resized_img)
         resized_img = tensor_transform(resized_img)
-        resized_img = self.model.preprocessing_function(resized_img)
         self.img = resized_img.permute(1, 2, 0)
+
+        resized_img = self.model.preprocessing_function(resized_img)
         self.resized_img = resized_img.unsqueeze(0)
+
         self.imgs = self.img
         self.resized_imgs = self.resized_img
 
