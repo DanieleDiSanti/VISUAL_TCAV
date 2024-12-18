@@ -274,7 +274,7 @@ class VisualTCAV:
 			delta = input_x - baseline_x
 			interpolated_images = baseline_x + alphas_x * delta  # (steps, images, C, H, W)
 
-			return interpolated_images.interpolated_images.permute(1, 0, 2, 3, 4)
+			return interpolated_images.permute(1, 0, 2, 3, 4)
 
 
 	# Function to compute the negative examples activations for a given layer

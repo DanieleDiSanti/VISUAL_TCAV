@@ -7,7 +7,7 @@ class LinearAligner():
         self.W = None
         self.b = None
            
-    def train(self, ftrs1, ftrs2, epochs=6, target_variance=4.5, verbose=0) -> dict:
+    def train(self, ftrs1, ftrs2, epochs=6, target_variance=4.5) -> dict:
         lr_solver = LinearRegressionSolver()
         
         print(f'Training linear aligner ...')
@@ -22,7 +22,7 @@ class LinearAligner():
         ftrs1 = c1 * ftrs1
         ftrs2 = c2 * ftrs2
 
-        lr_solver.train(ftrs1, ftrs2, bias=True, epochs=epochs, batch_size=100,)
+        lr_solver.train(ftrs1, ftrs2, bias=True, epochs=epochs, batch_size=100)
         mse_train, r2_train = lr_solver.test(ftrs1, ftrs2)
         
         print(f'Final MSE, R^2 = {mse_train:.3f}, {r2_train:.3f}')
@@ -102,7 +102,7 @@ class LinearRegressionSolver():
 
             e_loss /= num_of_batches
             
-            print(f'Epoch number, loss: {epoch}, {e_loss:.3f}')
+            #print(f'Epoch number, loss: {epoch}, {e_loss:.3f}')
             
             scheduler.step()
         

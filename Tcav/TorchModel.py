@@ -44,6 +44,7 @@ RESNET_LAYERS_TENSORS = {
     'linear': (1, 2048)
 }
 
+# index output fmap
 VGG_LAYERS_INDEX = {
     'conv1_1': 2,
     'conv1_2': 4,
@@ -54,7 +55,7 @@ VGG_LAYERS_INDEX = {
     'conv3_1': 12,
     'conv3_2': 14,
     'conv3_3': 16,
-    'maxpool3':17,
+    'maxpool3': 17,
     'conv4_1': 19,
     'conv4_2': 21,
     'conv4_3': 23,
