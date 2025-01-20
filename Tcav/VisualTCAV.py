@@ -40,19 +40,19 @@ preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transfo
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 preprocess_vgg16 = torchvision.models.VGG16_Weights.IMAGENET1K_V1.transforms()
 
-MODEL_NAMES = ['RESNET50_V2']
+MODEL_NAMES = ['RESNET50']
 CONCEPTS = ['random', 'zigzagged']
 
 
 def get_model_by_name(model_name, download=True):
 	models_dir = 'Torch_VisualTCAV/Models'
-	if model_name == 'RESNET50_V2':
-		model_graph_path = 'Resnet50_V2.pth'
+	if model_name == 'RESNET50':
+		model_graph_path = 'Resnet50.pth'
 		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
 		preprocess_function = preprocess_resnet_v2
 
 		if download:
-			model = torchvision.models.resnet50(weights="IMAGENET1K_V2")
+			model = torchvision.models.resnet50(pretrained=True)
 			path = f'{models_dir}/{model_name}/{model_graph_path}'
 			os.makedirs(f'{models_dir}/{model_name}', exist_ok=True)
 			torch.save(model, path)
