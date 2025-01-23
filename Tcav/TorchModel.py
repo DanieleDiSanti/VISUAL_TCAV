@@ -133,7 +133,7 @@ class FeatureMapsModel(nn.Module):
         return layer_names.index(self.layer_name)
 
     # Usa DataLoader
-    def forward(self, data):
+    def forward(self, data, detachOutput=False):
         outputs = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model.to(device)
@@ -143,7 +143,11 @@ class FeatureMapsModel(nn.Module):
             with torch.no_grad():
                 for batch_input, labels in data:
                     batch_input = batch_input.to(device)
-                    batch_output = self.layers(batch_input)
+
+                    if detachOutput:
+                        batch_output = self.layers(batch_input).detach().cpu()
+                    else:
+                        batch_output = self.layers(batch_input)
                     outputs.append(batch_output)
 
             return torch.cat(outputs, dim=0)
