@@ -8,6 +8,8 @@ from torchvision import datasets, transforms
 import os
 import torch.nn as nn
 import torchvision
+from torchvision import datasets, transforms
+from PIL import Image
 
 # Do not generate "__pycache__" folder
 sys.dont_write_bytecode = True
@@ -148,6 +150,7 @@ class FeatureMapsModel(nn.Module):
                         batch_output = self.layers(batch_input).detach().cpu()
                     else:
                         batch_output = self.layers(batch_input)
+
                     outputs.append(batch_output)
 
             return torch.cat(outputs, dim=0)
@@ -459,7 +462,7 @@ class ImageActivationGenerator:
             ])
 
         # Carica il dataset utilizzando ImageFolder
-        x = datasets.ImageFolder(root=images_folder_path, transform=transform)
+        x = datasets.ImageFolder(root=images_folder_path, transform=transform, is_valid_file=is_valid_image)
         return x
 
     def _get_DataLoader(self, image_folder, batch_size=None, shuffle=False):
@@ -473,3 +476,13 @@ class ImageActivationGenerator:
                 batch_size -= 1
             #print(f'New batch_size: {batch_size}')
         return DataLoader(image_folder, batch_size=batch_size, shuffle=shuffle)
+
+
+def is_valid_image(path):
+    try:
+        with Image.open(path) as img:
+            img.verify()  # Verifica se il file è corrotto
+        return True
+    except (IOError, SyntaxError):
+        return False
+
