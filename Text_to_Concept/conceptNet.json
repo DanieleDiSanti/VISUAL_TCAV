@@ -1,0 +1,102 @@
+{
+  "object": {
+    "isA": [],
+    "relatedWords": [],
+    "HasA" : [],
+    "HasProperty": []
+  },
+
+  "zebra": {
+    "isA": [
+      "animal",
+      "mammal",
+      "herbivore",
+      "equid",
+      "wild horse",
+      "prey"
+    ],
+    "HasA": [
+      "black and white stripes",
+      "hooves",
+      "mane",
+      "tail",
+      "legs",
+      "eyes",
+      "ears",
+      "fur"
+    ],
+    "HasProperty": [
+      "striped",
+      "fast",
+      "social",
+      "wild",
+      "herbivorous",
+      "strong",
+      "adaptable",
+      "territorial"
+    ]
+  },
+
+  "honeycomb": {
+    "isA": [
+      "framework",
+      "structure",
+      "honey",
+      "artifact animal created",
+      "natural pattern",
+      "geometric formation",
+      "biological architecture"
+    ],
+    "HasA": [
+      "wax",
+      "nectar",
+      "beeswax",
+      "pollen",
+      "larvae",
+      "honey",
+      "cells",
+      "hexagonal compartments"
+    ],
+    "HasProperty": [
+      "hexagonal",
+      "strong",
+      "efficient",
+      "lightweight",
+      "yellow",
+      "golden",
+      "hollow",
+      "organized",
+      "natural",
+      "self-sustaining"
+    ]
+  },
+
+  "waffle_iron": {
+    "isA": [
+      "kitchen appliance",
+      "cooking device",
+      "electric appliance",
+      "griddle"
+    ],
+    "HasA": [
+      "metal plates",
+      "hinges",
+      "handle",
+      "grid pattern",
+      "temperature control",
+      "power cord",
+      "non-stick coating"
+    ],
+    "HasProperty": [
+      "hot",
+      "waffled",
+      "non-stick",
+      "heavy",
+      "durable",
+      "rectangular",
+      "round",
+      "textured surface"
+    ]
+  }
+
+}
