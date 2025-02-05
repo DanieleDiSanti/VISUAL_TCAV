@@ -1,102 +1,169 @@
 {
-  "object": {
-    "isA": [],
-    "relatedWords": [],
-    "HasA" : [],
-    "HasProperty": []
+  "tench": {
+    "isA": ["fish", "freshwater fish", "animal"],
+    "HasA": ["scales", "fins", "gills", "eyes", "mouth", "tail"],
+    "HasProperty": ["elongated", "slimy", "olive-green", "small eyes", "swims", "aquatic"]
+  },
+
+  "goldfish": {
+    "isA": ["fish", "pet", "freshwater fish", "animal"],
+    "HasA": ["scales", "fins", "gills", "eyes", "mouth", "tail"],
+    "HasProperty": ["orange", "golden", "small", "shiny", "domesticated", "aquatic"]
+  },
+
+  "great_white_shark": {
+    "isA": ["fish", "shark", "predator", "marine animal"],
+    "HasA": ["fins", "sharp teeth", "gills", "eyes", "tail", "cartilaginous skeleton"],
+    "HasProperty": ["large", "gray", "white", "white underbelly", "fast", "powerful", "aquatic"]
+  },
+
+  "tiger_shark": {
+    "isA": ["fish", "shark", "predator", "marine animal"],
+    "HasA": ["fins", "sharp teeth", "gills", "eyes", "tail", "cartilaginous skeleton"],
+    "HasProperty": ["large", "striped", "gray", "aggressive", "aquatic", "deep-water"]
+  },
+
+  "hammerhead": {
+    "isA": ["fish", "shark", "predator", "marine animal"],
+    "HasA": ["wide head", "fins", "sharp teeth", "gills", "eyes", "tail"],
+    "HasProperty": ["hammer-shaped head", "gray", "large", "fast", "aquatic", "coastal"]
+  },
+
+  "electric_ray": {
+    "isA": ["fish", "ray", "marine animal"],
+    "HasA": ["flat body", "fins", "gills", "eyes", "mouth", "electric organs"],
+    "HasProperty": ["smooth", "electric", "bottom-dweller", "slow", "aquatic"]
+  },
+
+  "stingray": {
+    "isA": ["fish", "ray", "marine animal"],
+    "HasA": ["flat body", "fins", "gills", "eyes", "mouth", "venomous barb"],
+    "HasProperty": ["smooth", "venomous", "flexible", "bottom-dweller", "aquatic"]
+  },
+
+  "cock": {
+    "isA": ["bird", "poultry", "farm animal"],
+    "HasA": ["feathers", "beak", "comb", "wings", "tail", "legs", "eyes"],
+    "HasProperty": ["red comb", "colorful", "noisy", "territorial", "bipedal", "domesticated"]
+  },
+
+  "hen": {
+    "isA": ["bird", "poultry", "farm animal"],
+    "HasA": ["feathers", "beak", "comb", "wings", "tail", "legs", "eyes"],
+    "HasProperty": ["brown", "white", "lays eggs", "clucking", "domesticated", "bipedal"]
+  },
+
+  "ostrich": {
+    "isA": ["bird", "flightless bird", "large bird"],
+    "HasA": ["feathers", "long legs", "long neck", "beak", "wings", "eyes"],
+    "HasProperty": ["tall", "fast", "strong legs", "bipedal", "desert-adapted", "social"]
   },
 
   "zebra": {
-    "isA": [
-      "animal",
-      "mammal",
-      "herbivore",
-      "equid",
-      "wild horse",
-      "prey"
-    ],
-    "HasA": [
-      "black and white stripes",
-      "hooves",
-      "mane",
-      "tail",
-      "legs",
-      "eyes",
-      "ears",
-      "fur"
-    ],
-    "HasProperty": [
-      "striped",
-      "fast",
-      "social",
-      "wild",
-      "herbivorous",
-      "strong",
-      "adaptable",
-      "territorial"
-    ]
+    "isA": ["animal", "mammal", "herbivore", "equid", "wild horse", "prey"],
+    "HasA": ["black and white stripes", "hooves", "mane", "tail", "legs", "eyes", "ears", "fur", "long snout"],
+    "HasProperty": ["striped", "black", "white", "fast", "social", "wild", "herbivorous", "strong", "quadrupedal", "high-contrast pattern"]
   },
 
   "honeycomb": {
-    "isA": [
-      "framework",
-      "structure",
-      "honey",
-      "artifact animal created",
-      "natural pattern",
-      "geometric formation",
-      "biological architecture"
-    ],
-    "HasA": [
-      "wax",
-      "nectar",
-      "beeswax",
-      "pollen",
-      "larvae",
-      "honey",
-      "cells",
-      "hexagonal compartments"
-    ],
-    "HasProperty": [
-      "hexagonal",
-      "strong",
-      "efficient",
-      "lightweight",
-      "yellow",
-      "golden",
-      "hollow",
-      "organized",
-      "natural",
-      "self-sustaining"
-    ]
+    "isA": ["natural structure", "geometric pattern", "honey storage", "beehive component"],
+    "HasA": ["wax", "nectar", "bee", "pollen", "larvae", "honey", "cells", "hexagonal compartments", "thin walls"],
+    "HasProperty": ["hexagonal", "lightweight", "yellow", "golden", "hollow", "organized", "symmetrical"]
   },
 
   "waffle_iron": {
+    "isA": ["kitchen appliance", "cooking device", "electric appliance", "griddle"],
+    "HasA": ["metal plates", "hinges", "handle", "grid pattern", "temperature control", "power cord", "non-stick coating", "waffle mold", "steam vents"],
+    "HasProperty": ["hot", "waffled", "non-stick", "heavy", "durable", "rectangular", "round", "textured", "metallic"]
+  },
+
+  "crossword_puzzle": {
     "isA": [
-      "kitchen appliance",
-      "cooking device",
-      "electric appliance",
-      "griddle"
+      "puzzle",
+      "word game",
+      "printed material",
+      "mental challenge"
     ],
     "HasA": [
-      "metal plates",
-      "hinges",
-      "handle",
-      "grid pattern",
-      "temperature control",
-      "power cord",
-      "non-stick coating"
+      "grid",
+      "black squares",
+      "white squares",
+      "clues",
+      "words",
+      "numbers"
     ],
     "HasProperty": [
-      "hot",
-      "waffled",
-      "non-stick",
-      "heavy",
-      "durable",
-      "rectangular",
-      "round",
-      "textured surface"
+      "black",
+      "white",
+      "square",
+      "structured",
+      "logical",
+      "text-based",
+      "flat",
+      "printed"
     ]
-  }
+  },
 
+  "ambulance": {
+    "isA": ["vehicle", "emergency vehicle", "transport"],
+    "HasA": ["wheels", "siren", "lights", "doors", "windows", "stretcher"],
+    "HasProperty": ["white", "red cross", "loud", "fast", "emergency use", "spacious"]
+  },
+
+  "banana": {
+    "isA": ["fruit", "food", "edible plant"],
+    "HasA": ["peel", "flesh", "seeds"],
+    "HasProperty": ["yellow", "curved", "soft", "sweet", "edible", "nutritious"]
+  },
+
+  "castle": {
+    "isA": ["building", "historic structure", "fortification"],
+    "HasA": ["towers", "walls", "gate", "windows", "moat", "drawbridge"],
+    "HasProperty": ["stone", "tall", "ancient", "defensive", "ornate", "large"]
+  },
+
+  "laptop": {
+    "isA": ["electronic device", "computer", "portable device"],
+    "HasA": ["screen", "keyboard", "touchpad", "battery", "ports", "camera"],
+    "HasProperty": ["portable", "rectangular", "thin", "digital", "lightweight", "wireless"]
+  },
+
+  "violin": {
+    "isA": ["musical instrument", "string instrument", "orchestral instrument"],
+    "HasA": ["strings", "bow", "fingerboard", "bridge", "f-holes", "tuning pegs"],
+    "HasProperty": ["wooden", "small", "melodic", "acoustic", "resonant", "curved"]
+  },
+
+  "golden_retriever": {
+    "isA": ["animal", "dog", "mammal", "pet"],
+    "HasA": ["fur", "ears", "tail", "paws", "eyes", "nose"],
+    "HasProperty": ["golden", "friendly", "loyal", "medium-sized", "playful", "domesticated"]
+  },
+
+  "airplane": {
+    "isA": ["vehicle", "aircraft", "transport"],
+    "HasA": ["wings", "engines", "cockpit", "tail", "landing gear", "windows"],
+    "HasProperty": ["metallic", "fast", "large", "aerodynamic", "loud", "white"]
+  },
+
+  "cup": {
+    "isA": ["container", "kitchenware", "drinking vessel"],
+    "HasA": ["handle", "rim", "base", "interior"],
+    "HasProperty": ["cylindrical", "small", "hollow", "ceramic", "plastic", "glass"]
+  },
+
+  "pine_tree": {
+    "isA": ["plant", "tree", "conifer"],
+    "HasA": ["needles", "bark", "branches", "cones", "roots"],
+    "HasProperty": ["tall", "green", "evergreen", "wooden", "fragrant", "conical"]
+  },
+
+  "soccer_ball": {
+    "isA": ["sports equipment", "ball", "toy"],
+    "HasA": ["panels", "stitches", "valve"],
+    "HasProperty": ["round", "black and white", "bouncy", "inflatable", "durable", "textured"]
+  }
 }
+
+
+

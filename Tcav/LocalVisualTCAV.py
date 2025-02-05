@@ -152,7 +152,7 @@ class LocalVisualTCAV(VisualTCAV):
                     )
 
                     # Normalize Concept Map
-                    if not pre_load_cav:
+                    if True:
                         emblem_max, emblem_min = concept_layer.cav.concept_emblem
                         if emblem_max > emblem_min:
                             concept_layer.concept_map = torch.clamp(concept_layer.concept_map, min=emblem_min,
