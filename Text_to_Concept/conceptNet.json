@@ -162,7 +162,68 @@
     "isA": ["sports equipment", "ball", "toy"],
     "HasA": ["panels", "stitches", "valve"],
     "HasProperty": ["round", "black and white", "bouncy", "inflatable", "durable", "textured"]
+  },
+
+  "alarm_clock": {
+    "isA": ["electronic device", "timekeeping device", "household item"],
+    "HasA": ["clock face", "hands", "buttons", "speaker", "display", "power cord"],
+    "HasProperty": ["round", "rectangular", "digital", "loud", "portable", "illuminated"]
+  },
+
+  "backpack": {
+    "isA": ["bag", "storage item", "travel accessory"],
+    "HasA": ["straps", "zippers", "compartments", "fabric", "pockets", "handle"],
+    "HasProperty": ["portable", "lightweight", "durable", "adjustable", "fabric", "flexible"]
+  },
+
+  "broom": {
+    "isA": ["cleaning tool", "household item", "manual tool"],
+    "HasA": ["handle", "bristles", "stick", "grip"],
+    "HasProperty": ["long", "lightweight", "fibrous", "flexible", "wooden", "synthetic"]
+  },
+
+  "camera": {
+    "isA": ["electronic device", "optical device", "imaging tool"],
+    "HasA": ["lens", "shutter button", "viewfinder", "sensor", "flash", "battery"],
+    "HasProperty": ["compact", "digital", "adjustable", "black", "portable", "rectangular"]
+  },
+
+  "hammer": {
+    "isA": ["tool", "hand tool", "construction tool"],
+    "HasA": ["handle", "metal head", "grip", "claw"],
+    "HasProperty": ["heavy", "metallic", "durable", "hard", "wooden", "impact-resistant"]
+  },
+
+  "keyboard": {
+    "isA": ["computer accessory", "input device", "electronic device"],
+    "HasA": ["keys", "cable", "switches", "frame", "letters", "spacebar"],
+    "HasProperty": ["rectangular", "black", "plastic", "tactile", "clicky", "wired/wireless"]
+  },
+
+  "microwave": {
+    "isA": ["kitchen appliance", "electronic device", "cooking equipment"],
+    "HasA": ["door", "turntable", "buttons", "display", "power cord", "vent"],
+    "HasProperty": ["rectangular", "metallic", "hot", "electric", "timer-based", "illuminated"]
+  },
+
+  "screwdriver": {
+    "isA": ["tool", "hand tool", "construction tool"],
+    "HasA": ["handle", "shaft", "tip", "grip"],
+    "HasProperty": ["metallic", "durable", "long", "thin", "pointed", "manual"]
+  },
+
+  "sunglasses": {
+    "isA": ["eyewear", "fashion accessory", "protective gear"],
+    "HasA": ["lenses", "frame", "arms", "nose pads", "hinges"],
+    "HasProperty": ["dark", "reflective", "plastic", "lightweight", "stylish", "UV-resistant"]
+  },
+
+  "umbrella": {
+    "isA": ["rain protection", "portable item", "outdoor accessory"],
+    "HasA": ["canopy", "handle", "ribs", "shaft", "fabric"],
+    "HasProperty": ["collapsible", "waterproof", "lightweight", "colorful", "curved", "portable"]
   }
+
 }
 
 
