@@ -445,7 +445,7 @@ class ImageActivationGenerator:
         else:
             return img_folder
 
-    def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True):
+    def _load_ImageFolder(self, images_folder_path, shape=(224, 224), preprocess=True, valid_check=False):
         if self.preprocessing_function is not None and preprocess:
             transform = transforms.Compose([
                 transforms.Resize(shape, interpolation=transforms.InterpolationMode.BILINEAR),
@@ -462,7 +462,11 @@ class ImageActivationGenerator:
             ])
 
         # Carica il dataset utilizzando ImageFolder
-        x = datasets.ImageFolder(root=images_folder_path, transform=transform, is_valid_file=is_valid_image)
+        if valid_check:
+            x = datasets.ImageFolder(root=images_folder_path, transform=transform, is_valid_file=is_valid_image)
+        else:
+            x = datasets.ImageFolder(root=images_folder_path, transform=transform)
+
         return x
 
     def _get_DataLoader(self, image_folder, batch_size=None, shuffle=False):
