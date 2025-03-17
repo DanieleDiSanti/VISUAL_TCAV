@@ -248,7 +248,7 @@ class TorchModelWrapper:
         self.batch_size = batch_size
 
         # Load model
-        self.model = torch.load(model_path)
+        self.model = torch.load(model_path, weights_only=False)
         self.model.eval()  # Set to evaluation mode
 
         # Fetch layer names and tensors
