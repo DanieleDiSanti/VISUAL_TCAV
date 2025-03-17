@@ -38,7 +38,7 @@ class LinearAligner():
         return ftrs @ self.W.T + self.b
     
     def load_W(self, path_to_load: str):
-        aligner_dict = torch.load(path_to_load)
+        aligner_dict = torch.load(path_to_load, weights_only=False)
         self.W, self.b = [aligner_dict[x].float() for x in ['W', 'b']]
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.W = self.W.to(device).float()
