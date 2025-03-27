@@ -383,7 +383,7 @@ class TorchModelWrapper:
         if self.model_name == 'VGG_16':
             l_model = LogitsModel_VGG(self.model, layer_name)
         if self.model_name == 'RESNET18':
-            l_model = LogitsModel_VGG(self.model, layer_name)
+            l_model = Resnet18_LogitsModel(self.model, layer_name)
         else:
             l_model = LogitsModel(self.model, layer_name)
 
