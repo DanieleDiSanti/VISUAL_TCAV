@@ -19,6 +19,8 @@ from joblib import dump, load
 import torchvision
 import torch
 import torch.nn.functional as F
+from pytorchcv.model_provider import get_model as ptcv_get_model
+
 
 from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
 from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
@@ -40,12 +42,19 @@ preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transfo
 #preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 preprocess_vgg16 = torchvision.models.VGG16_Weights.IMAGENET1K_V1.transforms()
 
-MODEL_NAMES = ['RESNET50']
+MODEL_NAMES = ['RESNET50', 'RESNET18']
 CONCEPTS = ['random', 'zigzagged']
 
 
-def get_model_by_name(model_name, download=True):
+def get_model_by_name(model_name, model_labels_path=None, download=True, preprocess_function=None):
 	models_dir = 'Torch_VisualTCAV/Models'
+
+	if model_labels_path is None:
+		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
+
+	if preprocess_function is None:
+		preprocess_function = preprocess_resnet_v2
+
 	if model_name == 'RESNET50':
 		model_graph_path = 'Resnet50.pth'
 		model_labels_path = 'ResNet50V2-imagenet-classes.txt'
@@ -53,6 +62,17 @@ def get_model_by_name(model_name, download=True):
 
 		if download:
 			model = torchvision.models.resnet50(pretrained=True)
+			path = f'{models_dir}/{model_name}/{model_graph_path}'
+			os.makedirs(f'{models_dir}/{model_name}', exist_ok=True)
+			torch.save(model, path)
+
+	if model_name == 'RESNET18':
+		model_graph_path = 'Resnet18.pth'
+		model_labels_path = 'cub_classes.txt'
+		preprocess_function = preprocess_resnet_v2
+
+		if download:
+			model = ptcv_get_model("resnet18_cub", pretrained=True)
 			path = f'{models_dir}/{model_name}/{model_graph_path}'
 			os.makedirs(f'{models_dir}/{model_name}', exist_ok=True)
 			torch.save(model, path)

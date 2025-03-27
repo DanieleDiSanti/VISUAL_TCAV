@@ -11,6 +11,7 @@ import torchvision
 from torchvision import datasets, transforms
 from PIL import Image
 
+
 # Do not generate "__pycache__" folder
 sys.dont_write_bytecode = True
 
@@ -37,6 +38,8 @@ preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transfo
 #####
 
 RESNET_LAYERS = ['layer1', 'layer2', 'layer3', 'layer4', 'avgpool', 'linear']
+RESNET18_LAYERS = ['init_block', 'stage1', 'stage2', 'stage3', 'stage4', 'final_pool', 'output']
+
 RESNET_LAYERS_TENSORS = {
     'layer1': (3, 224, 224),
     'layer2': (256, 56, 56),
@@ -233,6 +236,72 @@ class LogitsModel_VGG(nn.Module):
         x = self.layers[1](x)  # classifier
         return x
 
+
+class FeatureMapsModel_Resnet18(nn.Module):
+
+    def __init__(self, model, layer_name, model_name=None):
+        super(FeatureMapsModel_Resnet18, self).__init__()
+        self.model = model
+        self.layer_name = layer_name
+        self.layer_index = RESNET18_LAYERS.index(layer_name)
+
+    # Usa DataLoader
+    def forward(self, data, detachOutput=False):
+        outputs = []
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to(device)
+        self.model.eval()
+
+        if type(data) == DataLoader:
+            with torch.no_grad():
+                for batch_input, labels in data:
+                    x = batch_input.to(device)
+                    for i in range(self.layer_index):
+                        x = self.model.features._modules[RESNET18_LAYERS[i]](x)
+
+                    batch_output = self.model.features._modules[RESNET18_LAYERS[self.layer_index]](x)
+
+                    if detachOutput:
+                        batch_output = batch_output.detach().cpu()
+
+                    outputs.append(batch_output)
+
+            return torch.cat(outputs, dim=0)
+
+        else:
+            with torch.no_grad():
+                x = data.to(device)
+                for i in range(self.layer_index):
+                    x = self.model.features._modules[RESNET18_LAYERS[i]](x)
+
+                batch_output = self.model.features._modules[RESNET18_LAYERS[self.layer_index]](x)
+
+                return batch_output
+
+
+class Resnet18_LogitsModel(nn.Module):
+    def __init__(self, model, layer_name):
+        super(Resnet18_LogitsModel, self).__init__()
+        layer_index = RESNET18_LAYERS.index(layer_name)
+        layer_name = RESNET18_LAYERS[layer_index + 1]
+        self.model = model
+        self.layer_name = layer_name
+        self.layer_index = RESNET18_LAYERS.index(layer_name)
+
+    def forward(self, x):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to(device)
+        x = x.to(device)
+        self.model.eval()
+        for i in range(self.layer_index, len(RESNET18_LAYERS) - 1):
+            x = self.model.features._modules[RESNET18_LAYERS[i]](x)
+
+        x = x.squeeze()
+        x = self.model.output(x)
+        return x
+
+
+
 class TorchModelWrapper:
     def __init__(self, model_path, labels_path, batch_size, model_name):
         # Model details
@@ -290,7 +359,11 @@ class TorchModelWrapper:
 
     ##### Get the feature maps given one or more input(s) #####
     def get_feature_maps(self, imgs, layer_name):
-        f_model = FeatureMapsModel(self.model, layer_name, self.model_name)
+
+        if self.model_name == 'RESNET18':
+            f_model = FeatureMapsModel_Resnet18(self.model, layer_name)
+        else:
+            f_model = FeatureMapsModel(self.model, layer_name, self.model_name)
 
         '''
         if layer_name not in self.simulated_layer_model:
@@ -307,8 +380,9 @@ class TorchModelWrapper:
         if len(feature_maps.shape) == 3:
             feature_maps = feature_maps.unsqueeze(0)
 
-
         if self.model_name == 'VGG_16':
+            l_model = LogitsModel_VGG(self.model, layer_name)
+        if self.model_name == 'RESNET18':
             l_model = LogitsModel_VGG(self.model, layer_name)
         else:
             l_model = LogitsModel(self.model, layer_name)
