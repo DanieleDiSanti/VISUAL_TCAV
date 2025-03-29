@@ -126,6 +126,9 @@ class LocalVisualTCAV(VisualTCAV):
             print(f'\n{layer_name}:', end='\n')
             if not pre_load_cav:
                 self.computations[layer_name] = {}
+            for concept_name in self.concepts:
+                random_acts = self._compute_random(layer_name).detach().cpu()
+                self.computations[layer_name][concept_name] = self._compute_cavs(True, concept_name, layer_name, random_acts)
 
             # Random activations
             if not pre_load_cav:
@@ -134,7 +137,7 @@ class LocalVisualTCAV(VisualTCAV):
 
             # Compute the feature maps
             print('Compute Test Image Fmaps', end='--')
-            feature_maps = self.model.model_wrapper.get_feature_maps(self.resized_img,layer_name).detach().cpu()[0]
+            feature_maps = self.model.model_wrapper.get_feature_maps(self.resized_img, layer_name).detach().cpu()[0]
 
             # Compute the CAVs
             print('Compute CAVs', end='--')
@@ -170,8 +173,12 @@ class LocalVisualTCAV(VisualTCAV):
                 attributions = {}
                 for n_class in range(self.n_classes):
                     if not self.model.binary_classification:
-                        logits = self.model.model_wrapper.get_logits(feature_maps, layer_name).detach().cpu()[0]
-                        logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps), layer_name).detach().cpu()[0]
+                        if self.model.model_name == 'RESNET18':
+                            logits = self.model.model_wrapper.get_logits(feature_maps, layer_name).detach().cpu()
+                            logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps),layer_name).detach().cpu()
+                        else:
+                            logits = self.model.model_wrapper.get_logits(feature_maps, layer_name).detach().cpu()[0]
+                            logits_baseline = self.model.model_wrapper.get_logits(torch.zeros_like(feature_maps), layer_name).detach().cpu()[0]
 
                         ig_expected = F.relu(logits - logits_baseline)
 
