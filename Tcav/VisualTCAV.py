@@ -23,7 +23,6 @@ from pytorchcv.model_provider import get_model as ptcv_get_model
 
 
 from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
-from Text_to_Concept import TextToConcept
 from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
 
 
