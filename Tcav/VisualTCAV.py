@@ -23,6 +23,7 @@ from pytorchcv.model_provider import get_model as ptcv_get_model
 
 
 from TorchModel import Model, TorchModelWrapper, ImageActivationGenerator
+from Text_to_Concept import TextToConcept
 from utils import Predictions, Prediction, ConceptLayer, contraharmonic_mean
 
 
@@ -39,13 +40,13 @@ IMAGENET_STD 	= [0.229, 0.224, 0.225]
 
 # preprocessing functions
 preprocess_resnet_v2 = torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transforms()
-#preprocess_v3 = tf.keras.applications.inception_v3.preprocess_input
 preprocess_vgg16 = torchvision.models.VGG16_Weights.IMAGENET1K_V1.transforms()
 
 MODEL_NAMES = ['RESNET50', 'RESNET18']
 CONCEPTS = ['random', 'zigzagged']
 
-
+#Fornisce uno dei modelli definiti in MODELS_NAMES, da usare come parametro per
+# inizializzare LocalVisualTCAV
 def get_model_by_name(model_name, model_labels_path=None, download=True, preprocess_function=None):
 	models_dir = 'Torch_VisualTCAV/Models'
 
@@ -158,6 +159,7 @@ class VisualTCAV:
 		self.random_acts = {}
 
 		self.set_concepts(CONCEPTS)
+
 
 	# Set a list of concepts
 	def set_concepts(self, concept_names):
